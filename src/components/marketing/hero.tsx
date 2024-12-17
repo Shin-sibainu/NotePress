@@ -24,8 +24,8 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="text-xl text-muted-foreground max-w-2xl mx-auto"
           >
-            コーディング不要で、数分でプロフェッショナルなブログを作成。
-            Notionワークスペースを連携するだけで始められます。
+            コーディング不要で、たった数分でプロフェッショナルなブログを作成。
+            あなたのNotionを連携するだけで始められます。
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -33,12 +33,13 @@ export function Hero() {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button size="lg" className="group">
-              今すぐ始める
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            <Button asChild size="lg" className="group">
+              <Link href="/setup">
+                今すぐ始める
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              {/* <Link href="/templates/minimalist">テンプレートを見る</Link> */}
               <Link href="/templates">テンプレートを見る</Link>
             </Button>
           </motion.div>
