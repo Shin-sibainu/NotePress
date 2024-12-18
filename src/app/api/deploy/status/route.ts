@@ -32,12 +32,15 @@ export async function GET(request: Request) {
       readyState: data.readyState,
       url: data.url,
       phase: data.phase,
-      raw: data
+      raw: data,
     });
+
+    const deploymentUrl = data.alias?.[0] || 
+      (data.url ? `https://${data.url.split('-')[0]}.vercel.app` : null);
 
     return NextResponse.json({
       status: data.readyState,
-      url: data.url,
+      url: deploymentUrl,
       phase: data.phase || null,
     });
   } catch (error) {
@@ -47,4 +50,4 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
-} 
+}

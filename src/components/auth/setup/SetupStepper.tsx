@@ -1,4 +1,4 @@
-//www.notion.so/Notion-Blog-Sample-14e1dcf229c28018bcbbe57ab6e92e8c?pvs//
+//14e1dcf229c28018bcbbe57ab6e92e8c
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import {
@@ -35,17 +35,7 @@ export function SetupStepper() {
     selectedTheme: "",
   });
   const [attempts, setAttempts] = useState(0);
-  const [currentPhase, setCurrentPhase] = useState<string>("");
   const maxAttempts = 60;
-
-  const statusMessages: Record<string, string> = {
-    QUEUED: "デプロイの準備中...",
-    INITIALIZING: "初期化中...",
-    BUILDING: "ビルド中...",
-    DEPLOYING: "デプロイ中...",
-    READY: "デプロイ完了！",
-    ERROR: "エラーが発生しました",
-  };
 
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
@@ -90,8 +80,8 @@ export function SetupStepper() {
         return;
       }
 
-      updateDeployStatus("INIT", "complete"); // 初期化完了
-      updateDeployStatus("GITHUB", "loading"); // GitHub開始
+      updateDeployStatus("INIT", "complete");
+      updateDeployStatus("GITHUB", "loading");
 
       // デプロイメントの開始
       const deployResponse = await fetch("/api/deploy", {
@@ -110,8 +100,8 @@ export function SetupStepper() {
 
       if (!deployResponse.ok) throw new Error(deployData.error);
 
-      updateDeployStatus("GITHUB", "complete"); // GitHub完了
-      updateDeployStatus("VERCEL", "loading"); // Vercel開始
+      updateDeployStatus("GITHUB", "complete");
+      updateDeployStatus("VERCEL", "loading");
 
       // デプロイメントの状態を監視
       const checkDeployment = async () => {
@@ -120,38 +110,43 @@ export function SetupStepper() {
           throw new Error("デプロイメントがタイムアウトしました");
         }
 
-        const statusResponse = await fetch(
-          `/api/deploy/status?deploymentId=${deployData.deploymentId}`
-        );
-        const statusData = await statusResponse.json();
+        try {
+          const statusResponse = await fetch(
+            `/api/deploy/status?deploymentId=${deployData.deploymentId}`
+          );
+          const statusData = await statusResponse.json();
 
-        setCurrentPhase(statusData.phase || statusData.status);
+          // フェーズに基づいてステータスを更新
+          if (statusData.phase === "QUEUED") {
+            updateDeployStatus("BUILD", "loading");
+            setDeployProgress((prev) => ({ ...prev, BUILD: 30 }));
+          } else if (statusData.phase === "INITIALIZING") {
+            updateDeployStatus("BUILD", "loading");
+            setDeployProgress((prev) => ({ ...prev, BUILD: 50 }));
+          } else if (statusData.phase === "BUILDING") {
+            updateDeployStatus("BUILD", "loading");
+            const progress = Math.min(100, (attempts / (maxAttempts / 2)) * 100);
+            setDeployProgress((prev) => ({ ...prev, BUILD: progress }));
+            setAttempts((prev) => prev + 1);
+          } else if (statusData.phase === "DEPLOYING") {
+            updateDeployStatus("BUILD", "complete");
+            updateDeployStatus("DEPLOY", "loading");
+            setDeployProgress((prev) => ({ ...prev, DEPLOY: 50 }));
+          } else if (statusData.status === "READY") {
+            updateDeployStatus("DEPLOY", "complete");
+            setDeployProgress((prev) => ({ ...prev, DEPLOY: 100 }));
+            // デプロイ完了
+            setTimeout(() => {
+              router.push(`/dashboard?url=${statusData.url}`);
+            }, 2000);
+            return;
+          }
 
-        if (statusData.status === "ERROR") {
-          throw new Error("デプロイメントに失敗しました");
-        }
-
-        if (statusData.phase === "BUILDING") {
-          updateDeployStatus("VERCEL", "complete");
-          updateDeployStatus("BUILD", "loading");
-        } else if (statusData.phase === "DEPLOYING") {
-          updateDeployStatus("BUILD", "complete");
-          updateDeployStatus("DEPLOY", "loading");
-        } else if (statusData.status === "READY") {
-          updateDeployStatus("DEPLOY", "complete");
-        }
-
-        if (statusData.status !== "READY") {
-          setAttempts((prev) => prev + 1);
           setTimeout(checkDeployment, 3000);
-          return;
+        } catch (error) {
+          console.error("Failed to check deployment status:", error);
+          updateDeployStatus("DEPLOY", "error");
         }
-
-        // デプロイ完了
-        setCurrentPhase("READY");
-        setTimeout(() => {
-          router.push(`/dashboard?url=${deployData.url}`);
-        }, 2000);
       };
 
       checkDeployment();
@@ -160,9 +155,7 @@ export function SetupStepper() {
         variant: "destructive",
         title: "エラー",
         description:
-          error instanceof Error
-            ? error.message
-            : "デプロイ中にエラーが発生しました",
+          error instanceof Error ? error.message : "デプロイ中にエラーが発生しました",
       });
       console.error("Error during deployment:", error);
       setIsDeploying(false);
@@ -205,7 +198,6 @@ export function SetupStepper() {
   const deploySteps: DeployStep[] = [
     { id: "INIT", label: "初期化", status: "pending" },
     { id: "GITHUB", label: "リポジトリ作成", status: "pending" },
-    { id: "VERCEL", label: "プロジェクト設定", status: "pending" },
     { id: "BUILD", label: "ビルド", status: "pending" },
     { id: "DEPLOY", label: "デプロイ", status: "pending" },
   ];
@@ -221,6 +213,14 @@ export function SetupStepper() {
       prev.map((step) => (step.id === stepId ? { ...step, status } : step))
     );
   };
+
+  const [deployProgress, setDeployProgress] = useState<Record<string, number>>({
+    INIT: 0,
+    GITHUB: 0,
+    VERCEL: 0,
+    BUILD: 0,
+    DEPLOY: 0,
+  });
 
   return (
     <Card className="w-full max-w-3xl p-12 bg-card/50 backdrop-blur-sm">
@@ -251,13 +251,19 @@ export function SetupStepper() {
                     </span>
                     {step.status === "loading" && (
                       <span className="text-xs text-muted-foreground">
-                        {statusMessages[currentPhase] || "処理中..."}
+                        {step.label}中...
                       </span>
                     )}
                   </div>
                   {index < deployStatus.length - 1 && (
                     <Progress
-                      value={step.status === "complete" ? 100 : 0}
+                      value={
+                        step.status === "complete"
+                          ? 100
+                          : step.status === "loading"
+                          ? deployProgress[step.id]
+                          : 0
+                      }
                       className="h-1"
                     />
                   )}

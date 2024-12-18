@@ -3,7 +3,7 @@
 import { Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { GradientBackground } from "@/components/gradient-background";
+import { GradientBackground } from "@/components/GradientBackground";
 import { Hero } from "@/components/marketing/hero";
 import { Features } from "@/components/marketing/features";
 import { Performance } from "@/components/marketing/performance";

@@ -1,4 +1,4 @@
-import { GradientBackground } from "@/components/gradient-background";
+import { GradientBackground } from "@/components/GradientBackground";
 
 export default function TemplatesLayout({
   children,
@@ -11,4 +11,4 @@ export default function TemplatesLayout({
       {children}
     </div>
   );
-} 
+}

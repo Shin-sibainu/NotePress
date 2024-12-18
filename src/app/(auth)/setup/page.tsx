@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Sparkles, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { GradientBackground } from "@/components/gradient-background";
+import { GradientBackground } from "@/components/GradientBackground";
 import { SetupStepper } from "@/components/auth/setup/SetupStepper";
 
 export default function SetupPage() {

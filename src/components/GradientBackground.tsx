@@ -1,4 +1,6 @@
-import { motion } from 'framer-motion';
+"use client";
+
+import { motion } from "framer-motion";
 
 export function GradientBackground() {
   return (
@@ -19,7 +21,7 @@ export function GradientBackground() {
         transition={{
           duration: 15,
           repeat: Infinity,
-          ease: "linear"
+          ease: "linear",
         }}
       />
       <motion.div
@@ -31,7 +33,7 @@ export function GradientBackground() {
         transition={{
           duration: 15,
           repeat: Infinity,
-          ease: "linear"
+          ease: "linear",
         }}
       />
     </div>

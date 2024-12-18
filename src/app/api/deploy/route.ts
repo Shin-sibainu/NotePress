@@ -38,7 +38,7 @@ export async function POST(request: Request) {
 
     // 1. リポジトリを作成
     const githubResponse = await fetch(
-      `https://api.github.com/repos/Shin-sibainu/minimalist/generate`,
+      `https://api.github.com/repos/Shin-sibainu/${theme}/generate`,
       {
         method: "POST",
         headers: {
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
       if (githubResponse.status === 403) {
         throw new Error(
-          `GitHubリポジトリの作成に失敗しました: アクセス権限が��足しています。Personal Access Tokenの権限設定を確認してください。`
+          `GitHubリポジトリの作成に失敗しました: アクセス権限が不足しています。Personal Access Tokenの権限設定を確認してください。`
         );
       }
 
@@ -167,7 +167,7 @@ export async function POST(request: Request) {
 
     // 4. デプロイメントをトリガー
     const deploymentResponse = await fetch(
-      `https://api.vercel.com/v13/deployments?forceNew=1`,
+      "https://api.vercel.com/v13/deployments",
       {
         method: "POST",
         headers: {
@@ -183,13 +183,6 @@ export async function POST(request: Request) {
             repoId: project.link.repoId,
           },
           target: "production",
-          projectSettings: {
-            framework: "nextjs",
-            nodeVersion: "22.x",
-            buildCommand: null,
-            outputDirectory: null,
-            rootDirectory: null,
-          },
         }),
       }
     );
@@ -218,9 +211,12 @@ export async function POST(request: Request) {
       );
     }
 
+    // Vercelが生成した実際のURLを使用
+    const deploymentUrl = deploymentData.url;
+
     return NextResponse.json({
       success: true,
-      url: `https://${blogUrl}.vercel.app`,
+      url: deploymentUrl,
       deploymentId: deploymentData.id,
       projectId: project.id,
     });
