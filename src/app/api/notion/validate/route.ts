@@ -14,11 +14,7 @@ export async function POST(request: Request) {
       });
 
       const data = await response.json();
-      console.log("Notion API Response:", {
-        status: response.status,
-        ok: response.ok,
-        data: data
-      });
+
 
       // エラーチェックを追加
       if (!response.ok || data.error) {

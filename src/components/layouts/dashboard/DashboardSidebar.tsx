@@ -6,8 +6,8 @@ import {
   LayoutDashboard, 
   FileEdit, 
   Settings, 
-  Image, 
-  Palette,
+  // Image, 
+  // Palette,
   Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,8 +16,8 @@ import { usePathname } from 'next/navigation';
 const menuItems = [
   { icon: LayoutDashboard, label: 'ダッシュボード', path: '/dashboard' },
   { icon: FileEdit, label: '記事一覧', path: '/dashboard/posts' },
-  { icon: Image, label: 'メディア', path: '/dashboard/media' },
-  { icon: Palette, label: 'デザイン', path: '/dashboard/appearance' },
+  // { icon: Image, label: 'メディア', path: '/dashboard/media' },
+  // { icon: Palette, label: 'デザイン', path: '/dashboard/appearance' },
   { icon: Settings, label: '設定', path: '/dashboard/settings' },
 ];
 

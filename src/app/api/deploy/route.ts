@@ -56,16 +56,7 @@ export async function POST(request: Request) {
       }
     );
 
-    // デバッグ用のログ出力
-    console.log("GitHub API Request:", {
-      url: `https://api.github.com/repos/Shin-sibainu/minimalist/generate`,
-      token: "Bearer " + GITHUB_TOKEN.substring(0, 4) + "...",
-      body: {
-        name: `blog-${blogUrl}`,
-        description: `Blog created with NotionCMS for ${blogUrl}`,
-        private: true,
-      },
-    });
+
 
     if (!githubResponse.ok) {
       const error = await githubResponse.json();
@@ -88,8 +79,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const repoData = await githubResponse.json();
-    console.log("GitHub Repository created:", repoData);
+    // const repoData = await githubResponse.json();
 
     // 2. Vercelプロジェクトを作成
     const vercelResponse = await fetch("https://api.vercel.com/v9/projects", {
@@ -109,21 +99,8 @@ export async function POST(request: Request) {
       }),
     });
 
-    // デバッグ用のログ出力
-    console.log("Vercel Project Creation Request:", {
-      name: blogUrl,
-      gitRepository: {
-        type: "github",
-        repo: `Shin-sibainu/blog-${blogUrl}`,
-      },
-    });
 
     const responseData = await vercelResponse.json();
-    console.log("Vercel API Response:", {
-      status: vercelResponse.status,
-      ok: vercelResponse.ok,
-      data: responseData,
-    });
 
     if (!vercelResponse.ok) {
       console.error("Vercel Project Creation Error:", {
@@ -187,21 +164,6 @@ export async function POST(request: Request) {
       }
     );
 
-    // デバッグ用ログ
-    console.log("Deployment Request:", {
-      name: blogUrl,
-      project: project.id,
-      gitSource: {
-        type: "github",
-        ref: "master",
-        repoId: project.link.repoId,
-      },
-      target: "production",
-      projectSettings: {
-        framework: "nextjs",
-        nodeVersion: "22.x",
-      },
-    });
 
     const deploymentData = await deploymentResponse.json();
 

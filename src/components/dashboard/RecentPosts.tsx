@@ -35,8 +35,9 @@ export function RecentPosts() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
+      className="relative"
     >
-      <Card className="p-6 bg-card/50 backdrop-blur-sm">
+      <Card className="p-6 bg-card/50 backdrop-blur-sm opacity-50">
         <h2 className="text-xl font-bold mb-4">最近の記事</h2>
         <div className="space-y-4">
           {recentPosts.map((post, index) => (
@@ -73,6 +74,11 @@ export function RecentPosts() {
           ))}
         </div>
       </Card>
+      <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm rounded-lg">
+        <p className="text-lg font-medium text-muted-foreground">
+          開発中...🚀
+        </p>
+      </div>
     </motion.div>
   );
 } 

@@ -119,26 +119,37 @@ export function SetupStepper() {
           // フェーズに基づいてステータスを更新
           if (statusData.phase === "QUEUED") {
             updateDeployStatus("BUILD", "loading");
-            setDeployProgress((prev) => ({ ...prev, BUILD: 30 }));
+            setDeployProgress((prev) => ({ ...prev, BUILD: 10 }));
           } else if (statusData.phase === "INITIALIZING") {
             updateDeployStatus("BUILD", "loading");
-            setDeployProgress((prev) => ({ ...prev, BUILD: 50 }));
+            setDeployProgress((prev) => ({ ...prev, BUILD: 30 }));
           } else if (statusData.phase === "BUILDING") {
             updateDeployStatus("BUILD", "loading");
-            const progress = Math.min(100, (attempts / (maxAttempts / 2)) * 100);
-            setDeployProgress((prev) => ({ ...prev, BUILD: progress }));
+            // ビルド進行状況をより細かく表示
+            const baseProgress = 30; // 初期進行状況
+            const maxBuildProgress = 90; // 最大進行状況（完了直前）
+            const progressIncrement =
+              (maxBuildProgress - baseProgress) / maxAttempts;
+            const currentProgress = Math.min(
+              maxBuildProgress,
+              baseProgress + attempts * progressIncrement
+            );
+
+            setDeployProgress((prev) => ({ ...prev, BUILD: currentProgress }));
             setAttempts((prev) => prev + 1);
           } else if (statusData.phase === "DEPLOYING") {
             updateDeployStatus("BUILD", "complete");
+            setDeployProgress((prev) => ({ ...prev, BUILD: 100 }));
             updateDeployStatus("DEPLOY", "loading");
             setDeployProgress((prev) => ({ ...prev, DEPLOY: 50 }));
           } else if (statusData.status === "READY") {
             updateDeployStatus("DEPLOY", "complete");
             setDeployProgress((prev) => ({ ...prev, DEPLOY: 100 }));
-            // デプロイ完了
-            setTimeout(() => {
-              router.push(`/dashboard?url=${statusData.url}`);
-            }, 2000);
+
+            // URLからドメイン部分のみを抽出
+            const cleanUrl = statusData.url.replace(/^https?:\/\//, "");
+            localStorage.setItem("deployedBlogUrl", cleanUrl);
+            router.push("/dashboard");
             return;
           }
 
@@ -155,7 +166,9 @@ export function SetupStepper() {
         variant: "destructive",
         title: "エラー",
         description:
-          error instanceof Error ? error.message : "デプロイ中にエラーが発生しました",
+          error instanceof Error
+            ? error.message
+            : "デプロイ中にエラーが発生しました",
       });
       console.error("Error during deployment:", error);
       setIsDeploying(false);

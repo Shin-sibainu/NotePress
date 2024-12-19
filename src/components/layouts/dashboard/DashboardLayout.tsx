@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { DashboardHeader } from "./DashboardHeader";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { GradientBackground } from "@/components/GradientBackground";
 
@@ -11,7 +10,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   return (
     <div className="relative min-h-screen bg-background/50 text-foreground">
       <GradientBackground />
-      <DashboardHeader />
 
       <div className="flex">
         <DashboardSidebar />

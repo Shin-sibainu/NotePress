@@ -27,13 +27,7 @@ export async function GET(request: Request) {
     }
 
     const data = await response.json();
-    console.log("Deployment Status Response:", {
-      deploymentId,
-      readyState: data.readyState,
-      url: data.url,
-      phase: data.phase,
-      raw: data,
-    });
+
 
     const deploymentUrl = data.alias?.[0] || 
       (data.url ? `https://${data.url.split('-')[0]}.vercel.app` : null);
