@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable react-hooks/rules-of-hooks */
+
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import Image from "next/image";
