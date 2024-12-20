@@ -5,8 +5,7 @@ import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ExternalLink, HelpCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useState, useCallback } from "react";
-import debounce from "lodash.debounce";
+import { useState } from "react";
 
 interface NotionSetupStepProps {
   onNext: () => void;
@@ -17,12 +16,33 @@ export default function NotionSetupStep({
   onNext,
   onUpdateData,
 }: NotionSetupStepProps) {
-  const [pageId, setPageId] = useState("");
+  const [notionUrl, setNotionUrl] = useState("");
+
+  const extractPageId = (url: string) => {
+    // Notionの様々なURL形式に対応
+    const patterns = [
+      /notion\.so\/[^/]+\/([a-zA-Z0-9-]+)/, // サブページ形式
+      /notion\.so\/([a-zA-Z0-9-]+)/, // ルートページ形式
+      /([a-zA-Z0-9-]{32})/, // ページIDのみ
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    return null;
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setPageId(value);
-    onUpdateData({ pageId: value });
+    const url = e.target.value;
+    setNotionUrl(url);
+
+    const pageId = extractPageId(url);
+    if (pageId) {
+      onUpdateData({ pageId });
+    }
   };
 
   return (
@@ -34,20 +54,20 @@ export default function NotionSetupStep({
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Notionの連携</h1>
         <p className="text-lg text-muted-foreground">
-          NotionデータベースのページIDを入力してください
+          NotionデータベースのURLを丸ごと貼り付けてください
         </p>
       </div>
       <div className="space-y-6">
         <div className="space-y-4">
           <div>
             <label className="text-base font-medium mb-2 block">
-              NotionデータベースのページID
+              NotionデータベースのURL
             </label>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Input
-                placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-                className="h-12 text-lg font-mono"
-                value={pageId}
+                placeholder="https://notion.so/your-database"
+                className="h-12 text-lg"
+                value={notionUrl}
                 onChange={handleInputChange}
               />
               <Button
@@ -64,16 +84,6 @@ export default function NotionSetupStep({
                 </Link>
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">
-              ページIDはNotionのURLから取得できます：
-            </p>
-            <div className="font-mono text-xs sm:text-sm break-all bg-background/50 p-2 rounded">
-              https://notion.so/
-              <span className="text-primary">
-                xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-              </span>
-              ?pvs=4
-            </div>
           </div>
         </div>
         <div className="flex flex-col gap-2">
@@ -88,12 +98,28 @@ export default function NotionSetupStep({
               target="_blank"
             >
               <ExternalLink className="h-4 w-4" />
-              Notionデータベースをコピー
+              こちらからNotionデータベースをコピー
             </Link>
           </Button>
-          <p className="text-sm text-center text-muted-foreground">
-            ※Notionデータベースをコピーしてから、そのページIDを入力してください
-          </p>
+        </div>
+        <div className="rounded-lg border border-amber-200 bg-amber-50/10 p-4 space-y-3 backdrop-blur-sm">
+          <h4 className="font-medium flex items-center gap-2 text-foreground">
+            <span className="text-amber-500">⚠️</span>
+            重要：Notionの公開設定
+          </h4>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              上記データベースをコピーした後、以下の手順で公開設定を行ってください：
+            </p>
+            <ol className="list-decimal list-inside space-y-1 ml-1">
+              <li>Notionデータベースの右上の「共有」をクリック</li>
+              <li>「Web公開」を選択</li>
+              <li>「公開」を選択</li>
+            </ol>
+            <p className="text-xs mt-2 text-amber-500/80 font-medium">
+              ※ この設定がないと、NotionCMSがデータベースにアクセスできません
+            </p>
+          </div>
         </div>
       </div>
     </motion.div>

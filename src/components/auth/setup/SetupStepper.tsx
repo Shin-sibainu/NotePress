@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Loader2,
   Rocket,
-  Circle,
   CheckCircle,
   XCircle,
 } from "lucide-react";
@@ -17,12 +16,42 @@ import ThemeSelectionStep from "./ThemeSelectionStep";
 import NotionSetupStep from "./NotionSetupStep";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { DeployStep, DeployStepStatus } from "@/types/deploy";
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface SetupData {
   basicInfo: { url: string } | null;
   notionConnection: { pageId: string } | null;
   selectedTheme: string;
 }
+
+const INITIAL_STEPS: DeployStep[] = [
+  {
+    id: "INIT",
+    label: "初期化",
+    status: "pending",
+    description: "プロジェクトの初期設定を行っています",
+  },
+  {
+    id: "GITHUB",
+    label: "リポジトリ作成",
+    status: "pending",
+    description: "GitHubリポジトリを作成しています",
+  },
+  {
+    id: "BUILD",
+    label: "ビルド",
+    status: "pending",
+    description: "アプリケーションをビルドしています",
+  },
+  {
+    id: "DEPLOY",
+    label: "デプロイ",
+    status: "pending",
+    description: "Webサイトをデプロイしています",
+  },
+];
 
 export function SetupStepper() {
   const { toast } = useToast();
@@ -36,6 +65,8 @@ export function SetupStepper() {
   });
   const [attempts, setAttempts] = useState(0);
   const maxAttempts = 60;
+  const [deploySteps, setDeploySteps] = useState<DeployStep[]>(INITIAL_STEPS);
+  const [progress, setProgress] = useState(0);
 
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
@@ -74,7 +105,8 @@ export function SetupStepper() {
         toast({
           variant: "destructive",
           title: "Notionデータベースエラー",
-          description: "無効なNotionページIDです。再度お確かめください。",
+          description:
+            validateData.error || "Notionデータベースの設定を確認してください",
         });
         setIsDeploying(false);
         return;
@@ -101,7 +133,9 @@ export function SetupStepper() {
       if (!deployResponse.ok) throw new Error(deployData.error);
 
       updateDeployStatus("GITHUB", "complete");
-      updateDeployStatus("VERCEL", "loading");
+      // ビルドフェーズを即座に開始
+      updateDeployStatus("BUILD", "loading", "ビルドの準備中...");
+      setProgress(10);
 
       // デプロイメントの状態を監視
       const checkDeployment = async () => {
@@ -110,43 +144,35 @@ export function SetupStepper() {
           throw new Error("デプロイメントがタイムアウトしました");
         }
 
+        // 進捗状況を先に更新
+        const currentProgress = Math.min(
+          90,
+          30 + (attempts * 60) / maxAttempts
+        );
+        setProgress(currentProgress);
+        setAttempts((prev) => prev + 1);
+
+        // 進捗に応じてメッセージを更新
+        if (currentProgress < 50) {
+          updateDeployStatus("BUILD", "loading", "ソースコードをコンパイル中...");
+        } else if (currentProgress < 70) {
+          updateDeployStatus("BUILD", "loading", "静的ファイルを生成中...");
+        } else {
+          updateDeployStatus("BUILD", "loading", "最適化を実行中...");
+        }
+
         try {
           const statusResponse = await fetch(
             `/api/deploy/status?deploymentId=${deployData.deploymentId}`
           );
           const statusData = await statusResponse.json();
 
-          // フェーズに基づいてステータスを更新
-          if (statusData.phase === "QUEUED") {
-            updateDeployStatus("BUILD", "loading");
-            setDeployProgress((prev) => ({ ...prev, BUILD: 10 }));
-          } else if (statusData.phase === "INITIALIZING") {
-            updateDeployStatus("BUILD", "loading");
-            setDeployProgress((prev) => ({ ...prev, BUILD: 30 }));
-          } else if (statusData.phase === "BUILDING") {
-            updateDeployStatus("BUILD", "loading");
-            // ビルド進行状況をより細かく表示
-            const baseProgress = 30; // 初期進行状況
-            const maxBuildProgress = 90; // 最大進行状況（完了直前）
-            const progressIncrement =
-              (maxBuildProgress - baseProgress) / maxAttempts;
-            const currentProgress = Math.min(
-              maxBuildProgress,
-              baseProgress + attempts * progressIncrement
-            );
+          // APIレスポンスに基づいてステータスを更新
+          if (statusData.phase === "READY" || statusData.status === "READY") {
+            updateDeployStatus("BUILD", "complete", "ビルド完了");
+            updateDeployStatus("DEPLOY", "complete", "デプロイ完了！");
+            setProgress(100);
 
-            setDeployProgress((prev) => ({ ...prev, BUILD: currentProgress }));
-            setAttempts((prev) => prev + 1);
-          } else if (statusData.phase === "DEPLOYING") {
-            updateDeployStatus("BUILD", "complete");
-            setDeployProgress((prev) => ({ ...prev, BUILD: 100 }));
-            updateDeployStatus("DEPLOY", "loading");
-            setDeployProgress((prev) => ({ ...prev, DEPLOY: 50 }));
-          } else if (statusData.status === "READY") {
-            updateDeployStatus("DEPLOY", "complete");
-            setDeployProgress((prev) => ({ ...prev, DEPLOY: 100 }));
-
-            // URLからドメイン部分のみを抽出
             const cleanUrl = statusData.url.replace(/^https?:\/\//, "");
             localStorage.setItem("deployedBlogUrl", cleanUrl);
             router.push("/dashboard");
@@ -202,88 +228,105 @@ export function SetupStepper() {
     }
   };
 
-  type DeployStep = {
-    id: string;
-    label: string;
-    status: "pending" | "loading" | "complete" | "error";
-  };
-
-  const deploySteps: DeployStep[] = [
-    { id: "INIT", label: "初期化", status: "pending" },
-    { id: "GITHUB", label: "リポジトリ作成", status: "pending" },
-    { id: "BUILD", label: "ビルド", status: "pending" },
-    { id: "DEPLOY", label: "デプロイ", status: "pending" },
-  ];
-
-  const [deployStatus, setDeployStatus] = useState<DeployStep[]>(deploySteps);
-
-  // ステップの更新関数
   const updateDeployStatus = (
     stepId: string,
-    status: "pending" | "loading" | "complete" | "error"
+    status: DeployStepStatus,
+    description?: string
   ) => {
-    setDeployStatus((prev) =>
-      prev.map((step) => (step.id === stepId ? { ...step, status } : step))
+    setDeploySteps((prev) =>
+      prev.map((step) =>
+        step.id === stepId
+          ? { ...step, status, description: description || step.description }
+          : step
+      )
     );
-  };
 
-  const [deployProgress, setDeployProgress] = useState<Record<string, number>>({
-    INIT: 0,
-    GITHUB: 0,
-    VERCEL: 0,
-    BUILD: 0,
-    DEPLOY: 0,
-  });
+    // 進捗状況を更新
+    const stepIndex = deploySteps.findIndex((step) => step.id === stepId);
+    if (status === "complete") {
+      setProgress(((stepIndex + 1) / deploySteps.length) * 100);
+    } else if (status === "loading") {
+      setProgress((stepIndex / deploySteps.length) * 100);
+    }
+  };
 
   return (
     <Card className="w-full max-w-3xl p-12 bg-card/50 backdrop-blur-sm">
       {isDeploying && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg z-50">
-          <div className="text-center space-y-6 max-w-md w-full px-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="text-lg font-medium">ブログを構築中...</p>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-lg p-6"
+          >
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <h2 className="text-xl font-semibold">ブログを構築中...</h2>
+                <div className="space-y-1">
+                  <Progress value={progress} className="h-2" />
+                  <p className="text-sm text-muted-foreground text-right">
+                    {Math.round(progress)}%
+                  </p>
+                </div>
+              </div>
 
-            <div className="space-y-4">
-              {deployStatus.map((step, index) => (
-                <div key={step.id} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-2">
-                      {step.status === "pending" && (
-                        <Circle className="h-4 w-4 text-muted-foreground" />
+              <div className="space-y-4">
+                {deploySteps.map((step, index) => (
+                  <motion.div
+                    key={step.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={cn(
+                      "flex items-center gap-4 p-4 rounded-lg transition-colors duration-200",
+                      step.status === "complete" && "bg-emerald-500/10",
+                      step.status === "loading" && "bg-primary/10",
+                      step.status === "error" && "bg-destructive/10"
+                    )}
+                  >
+                    <div className="flex-shrink-0">
+                      {step.status === "complete" && (
+                        <motion.div
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ type: "spring", duration: 0.3 }}
+                        >
+                          <CheckCircle className="h-5 w-5 text-emerald-500" />
+                        </motion.div>
                       )}
                       {step.status === "loading" && (
-                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      )}
-                      {step.status === "complete" && (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <Loader2 className="h-5 w-5 text-primary animate-spin" />
                       )}
                       {step.status === "error" && (
-                        <XCircle className="h-4 w-4 text-destructive" />
+                        <XCircle className="h-5 w-5 text-destructive" />
                       )}
-                      {step.label}
-                    </span>
-                    {step.status === "loading" && (
-                      <span className="text-xs text-muted-foreground">
-                        {step.label}中...
-                      </span>
-                    )}
-                  </div>
-                  {index < deployStatus.length - 1 && (
-                    <Progress
-                      value={
-                        step.status === "complete"
-                          ? 100
-                          : step.status === "loading"
-                          ? deployProgress[step.id]
-                          : 0
-                      }
-                      className="h-1"
-                    />
-                  )}
-                </div>
-              ))}
+                      {step.status === "pending" && (
+                        <div className="h-5 w-5 rounded-full border-2 border-muted" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <p
+                        className={cn(
+                          "font-medium",
+                          step.status === "complete" && "text-emerald-500",
+                          step.status === "loading" && "text-primary",
+                          step.status === "error" && "text-destructive"
+                        )}
+                      >
+                        {step.label}
+                      </p>
+                      {step.description && (
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          {step.description}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
