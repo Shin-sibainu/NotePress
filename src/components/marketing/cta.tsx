@@ -1,6 +1,7 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AnimatedSection } from "../animated-section";
+import Link from "next/link";
 
 export function CTA() {
   return (
@@ -14,10 +15,12 @@ export function CTA() {
             <p className="text-xl text-muted-foreground mb-8">
               すでに多くのクリエイターがNotionCMSでブログを公開しています。
             </p>
-            <Button size="lg" className="group">
-              今すぐ始める
-              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <Link href={"/setup"}>
+              <Button size="lg" className="group">
+                今すぐ始める
+                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
           </AnimatedSection>
         </div>
       </div>

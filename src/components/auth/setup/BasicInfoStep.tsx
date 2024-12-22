@@ -1,21 +1,27 @@
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface BasicInfoStepProps {
-  onUpdateData: (data: { url: string }) => void;
+  onUpdateData: (data: { url: string | null }) => void;
+  initialValue: string;
 }
 
-export function BasicInfoStep({ onUpdateData }: BasicInfoStepProps) {
-  const [url, setUrl] = useState("");
+export function BasicInfoStep({
+  onUpdateData,
+  initialValue,
+}: BasicInfoStepProps) {
+  const [url, setUrl] = useState(initialValue);
   const [touched, setTouched] = useState(false);
-  const isValid = url.length > 0;
+  const isValid = url.trim().length > 0;
   const showError = touched && !isValid;
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+    const value = e.target.value.trim();
     setUrl(value);
-    onUpdateData({ url: value });
+    setTouched(true);
+    onUpdateData({ url: value || null });
   };
 
   return (
@@ -40,15 +46,19 @@ export function BasicInfoStep({ onUpdateData }: BasicInfoStepProps) {
               <span>https://</span>
               <Input
                 placeholder="my-blog"
-                className={`h-12 text-lg max-w-[200px] ${
-                  showError ? "border-destructive" : ""
-                }`}
+                className={cn(
+                  "h-12 text-lg max-w-[200px]",
+                  showError &&
+                    "border-destructive focus-visible:ring-destructive"
+                )}
                 value={url}
                 onChange={handleUrlChange}
                 onBlur={() => setTouched(true)}
               />
             </div>
-            <span className="text-lg text-muted-foreground">.notioncms.app</span>
+            <span className="text-lg text-muted-foreground">
+              .notioncms.app
+            </span>
           </div>
           <div className="mt-2 space-y-1">
             <p className="text-sm text-muted-foreground">
@@ -56,6 +66,9 @@ export function BasicInfoStep({ onUpdateData }: BasicInfoStepProps) {
             </p>
             <p className="text-sm text-muted-foreground">
               例: my-blog, tech-notes, portfolio
+            </p>
+            <p className="text-sm text-muted-foreground">
+              ※ 指定したURLが既に使用されている場合、自動的に別のURLが割り当てられます
             </p>
           </div>
           {showError && (

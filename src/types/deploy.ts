@@ -1,11 +1,11 @@
-export type DeployStepStatus = 'pending' | 'loading' | 'complete' | 'error';
+export type DeployStepStatus = "pending" | "loading" | "complete" | "error";
 
 export interface DeployStep {
   id: string;
   label: string;
   status: DeployStepStatus;
   description?: string;
-} 
+}
 
 export const INITIAL_STEPS: DeployStep[] = [
   {
@@ -15,32 +15,14 @@ export const INITIAL_STEPS: DeployStep[] = [
     description: "プロジェクトの初期設定を行っています",
   },
   {
-    id: "GITHUB_INIT",
-    label: "GitHubリポジトリ作成",
+    id: "GITHUB",
+    label: "リポジトリ作成",
     status: "pending",
-    description: "リポジトリを作成しています",
+    description: "GitHubリポジトリを作成しています",
   },
   {
-    id: "GITHUB_PUSH",
-    label: "コード転送",
-    status: "pending",
-    description: "ソースコードを転送しています",
-  },
-  {
-    id: "VERCEL_INIT",
-    label: "Vercelプロジェクト作成",
-    status: "pending",
-    description: "デプロイ環境を準備しています",
-  },
-  {
-    id: "BUILD_INIT",
-    label: "ビルド準備",
-    status: "pending",
-    description: "依存関係をインストールしています",
-  },
-  {
-    id: "BUILD_COMPILE",
-    label: "ビルド実行",
+    id: "BUILD",
+    label: "ビルド",
     status: "pending",
     description: "アプリケーションをビルドしています",
   },
@@ -50,4 +32,4 @@ export const INITIAL_STEPS: DeployStep[] = [
     status: "pending",
     description: "Webサイトを公開しています",
   },
-]; 
+];

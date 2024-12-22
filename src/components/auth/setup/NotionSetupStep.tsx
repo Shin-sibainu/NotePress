@@ -6,24 +6,28 @@ import { motion } from "framer-motion";
 import { ExternalLink, HelpCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface NotionSetupStepProps {
   onNext: () => void;
   onUpdateData: (data: any) => void;
+  initialValue: string;
 }
 
 export default function NotionSetupStep({
   onNext,
   onUpdateData,
+  initialValue,
 }: NotionSetupStepProps) {
-  const [notionUrl, setNotionUrl] = useState("");
-
   const extractPageId = (url: string) => {
     // Notionの様々なURL形式に対応
     const patterns = [
-      /notion\.so\/[^/]+\/([a-zA-Z0-9-]+)/, // サブページ形式
-      /notion\.so\/([a-zA-Z0-9-]+)/, // ルートページ形式
-      /([a-zA-Z0-9-]{32})/, // ページIDのみ
+      // notion.so形式
+      /notion\.so\/(?:[^/]+\/)?([a-zA-Z0-9]{32})/,
+      // notion.site形式
+      /notion\.site\/(?:[^/]+\/)?([a-zA-Z0-9]{32})/,
+      // ページIDのみ
+      /([a-zA-Z0-9]{32})/,
     ];
 
     for (const pattern of patterns) {
@@ -32,18 +36,34 @@ export default function NotionSetupStep({
         return match[1];
       }
     }
-    return null;
+
+    // URLからページIDを抽出（最後の32文字を取得）
+    const idMatch = url.match(/[a-zA-Z0-9]{32}(?=\?|$)/);
+    return idMatch ? idMatch[0] : null;
   };
+
+  const [notionUrl, setNotionUrl] = useState(initialValue);
+  const [touched, setTouched] = useState(false);
+  const [pageId, setPageId] = useState<string | null>(() => {
+    return initialValue ? extractPageId(initialValue) : null;
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setNotionUrl(url);
+    setTouched(true);
 
-    const pageId = extractPageId(url);
-    if (pageId) {
-      onUpdateData({ pageId });
+    const extractedPageId = extractPageId(url);
+    setPageId(extractedPageId);
+
+    if (extractedPageId) {
+      onUpdateData({ pageId: extractedPageId });
+    } else {
+      onUpdateData({ pageId: null }); // 値が空または無効な場合はnullを設定
     }
   };
+
+  const showError = touched && !pageId;
 
   return (
     <motion.div
@@ -66,9 +86,14 @@ export default function NotionSetupStep({
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Input
                 placeholder="https://notion.so/your-database"
-                className="h-12 text-lg"
+                className={cn(
+                  "h-12 text-lg",
+                  showError &&
+                    "border-destructive focus-visible:ring-destructive"
+                )}
                 value={notionUrl}
                 onChange={handleInputChange}
+                onBlur={() => setTouched(true)}
               />
               <Button
                 variant="outline"
@@ -84,6 +109,11 @@ export default function NotionSetupStep({
                 </Link>
               </Button>
             </div>
+            {showError && (
+              <p className="text-sm text-destructive mt-2">
+                有効なNotionデータベースのURLを入力してください
+              </p>
+            )}
           </div>
         </div>
         <div className="flex flex-col gap-2">

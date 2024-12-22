@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable react-hooks/rules-of-hooks */
 
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
+import Link from "next/link";
 
 const themes = [
   {
@@ -13,7 +16,9 @@ const themes = [
     description: "シンプルで読みやすいデザイン",
     image:
       "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800&h=500",
-    price: "¥1980",
+    price: "無料",
+    enabled: true,
+    demoUrl: "https://minimalist-three.vercel.app/",
   },
   {
     id: "casual",
@@ -21,26 +26,34 @@ const themes = [
     description: "親しみやすいカジュアルなデザイン",
     image:
       "https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?auto=format&fit=crop&q=80&w=800&h=500",
-    price: "¥4980",
+    price: "¥4,980",
+    enabled: false,
+    comingSoon: true,
+    demoUrl: "#",
   },
 ];
 
 interface ThemeSelectionStepProps {
   onComplete: () => void;
-  onUpdateData: (theme: string) => void;
+  onUpdateData: (theme: string | null) => void;
+  initialValue: string | null;
 }
 
 export default function ThemeSelectionStep({
   onComplete,
   onUpdateData,
+  initialValue,
 }: ThemeSelectionStepProps) {
-  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(
+    initialValue
+  );
   const [touched, setTouched] = useState(false);
   const showError = touched && !selectedTheme;
 
   const handleThemeChange = (theme: string) => {
     setSelectedTheme(theme);
-    onUpdateData(theme);
+    setTouched(true);
+    onUpdateData(theme || null);
   };
 
   return (
@@ -60,16 +73,27 @@ export default function ThemeSelectionStep({
         {themes.map((theme) => (
           <motion.div
             key={theme.id}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: theme.enabled ? 1.02 : 1 }}
+            whileTap={{ scale: theme.enabled ? 0.98 : 1 }}
+            className={cn("relative", !theme.enabled && "cursor-not-allowed")}
           >
+            {theme.comingSoon && (
+              <span className="absolute -right-2 -top-2 z-10 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                準備中
+              </span>
+            )}
             <Card
-              className={`cursor-pointer transition-all border-2 ${
-                selectedTheme === theme.id
-                  ? "border-primary ring-2 ring-primary ring-offset-2"
-                  : "hover:border-primary/50 border-transparent"
-              }`}
-              onClick={() => handleThemeChange(theme.id)}
+              className={cn(
+                "transition-all border-2",
+                theme.enabled
+                  ? selectedTheme === theme.id
+                    ? "border-primary ring-2 ring-primary ring-offset-2"
+                    : "hover:border-primary/50 border-transparent"
+                  : "opacity-50 border-transparent",
+                !theme.enabled && "pointer-events-none",
+                showError && "border-destructive"
+              )}
+              onClick={() => theme.enabled && handleThemeChange(theme.id)}
             >
               <div className="relative aspect-[16/10] overflow-hidden rounded-t-lg">
                 <Image
@@ -87,7 +111,21 @@ export default function ThemeSelectionStep({
                     {theme.price}
                   </span>
                 </div>
-                <p className="text-muted-foreground">{theme.description}</p>
+                <p className="text-muted-foreground mb-4">
+                  {theme.description}
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full"
+                  asChild
+                  disabled={!theme.enabled}
+                >
+                  <Link href={theme.demoUrl} target="_blank">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    サンプルを見る
+                  </Link>
+                </Button>
               </div>
             </Card>
           </motion.div>
@@ -103,8 +141,4 @@ export default function ThemeSelectionStep({
       )}
     </motion.div>
   );
-
-  useEffect(() => {
-    setTouched(true);
-  }, []);
 }

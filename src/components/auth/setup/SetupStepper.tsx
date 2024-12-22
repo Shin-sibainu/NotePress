@@ -21,9 +21,9 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface SetupData {
-  basicInfo: { url: string } | null;
-  notionConnection: { pageId: string } | null;
-  selectedTheme: string;
+  basicInfo: { url: string | null } | null;
+  notionConnection: { pageId: string | null } | null;
+  selectedTheme: string | null;
 }
 
 const INITIAL_STEPS: DeployStep[] = [
@@ -61,7 +61,7 @@ export function SetupStepper() {
   const [setupData, setSetupData] = useState<SetupData>({
     basicInfo: null,
     notionConnection: null,
-    selectedTheme: "",
+    selectedTheme: null,
   });
   const [attempts, setAttempts] = useState(0);
   const maxAttempts = 60;
@@ -133,9 +133,8 @@ export function SetupStepper() {
       if (!deployResponse.ok) throw new Error(deployData.error);
 
       updateDeployStatus("GITHUB", "complete");
-      // ビルドフェーズを即座に開始
+      // ビルドフェーズを開始
       updateDeployStatus("BUILD", "loading", "ビルドの準備中...");
-      setProgress(10);
 
       // デプロイメントの状態を監視
       const checkDeployment = async () => {
@@ -144,41 +143,42 @@ export function SetupStepper() {
           throw new Error("デプロイメントがタイムアウトしました");
         }
 
-        // 進捗状況を先に更新
-        const currentProgress = Math.min(
-          90,
-          30 + (attempts * 60) / maxAttempts
-        );
-        setProgress(currentProgress);
-        setAttempts((prev) => prev + 1);
-
-        // 進捗に応じてメッセージを更新
-        if (currentProgress < 50) {
-          updateDeployStatus("BUILD", "loading", "ソースコードをコンパイル中...");
-        } else if (currentProgress < 70) {
-          updateDeployStatus("BUILD", "loading", "静的ファイルを生成中...");
-        } else {
-          updateDeployStatus("BUILD", "loading", "最適化を実行中...");
-        }
-
         try {
           const statusResponse = await fetch(
             `/api/deploy/status?deploymentId=${deployData.deploymentId}`
           );
           const statusData = await statusResponse.json();
 
-          // APIレスポンスに基づいてステータスを更新
-          if (statusData.phase === "READY" || statusData.status === "READY") {
-            updateDeployStatus("BUILD", "complete", "ビルド完了");
-            updateDeployStatus("DEPLOY", "complete", "デプロイ完了！");
-            setProgress(100);
-
-            const cleanUrl = statusData.url.replace(/^https?:\/\//, "");
-            localStorage.setItem("deployedBlogUrl", cleanUrl);
-            router.push("/dashboard");
-            return;
+          // 進捗状況とメッセージを更新
+          switch (statusData.phase) {
+            case "QUEUED":
+              updateDeployStatus("BUILD", "loading", "ビルドキューに追加中...");
+              break;
+            case "INITIALIZING":
+              updateDeployStatus(
+                "BUILD",
+                "loading",
+                "依存関係をインストール中..."
+              );
+              break;
+            case "BUILDING":
+              updateDeployStatus("BUILD", "loading", "ビルド実行中...");
+              break;
+            case "READY":
+              updateDeployStatus("BUILD", "complete", "ビルド完了");
+              updateDeployStatus("DEPLOY", "complete", "デプロイ完了！");
+              const cleanUrl = statusData.url.replace(/^https?:\/\//, "");
+              localStorage.setItem("deployedBlogUrl", cleanUrl);
+              router.push("/dashboard");
+              return;
           }
 
+          // 進捗が後退しないように保証
+          setProgress((prevProgress) =>
+            Math.max(prevProgress, statusData.buildProgress)
+          );
+
+          setAttempts((prev) => prev + 1);
           setTimeout(checkDeployment, 3000);
         } catch (error) {
           console.error("Failed to check deployment status:", error);
@@ -342,18 +342,21 @@ export function SetupStepper() {
           {activeStep === 0 && (
             <BasicInfoStep
               onUpdateData={(data) => updateSetupData("basicInfo", data)}
+              initialValue={setupData.basicInfo?.url || ""}
             />
           )}
           {activeStep === 1 && (
             <ThemeSelectionStep
               onComplete={handleNext}
               onUpdateData={(theme) => updateSetupData("selectedTheme", theme)}
+              initialValue={setupData.selectedTheme || null}
             />
           )}
           {activeStep === 2 && (
             <NotionSetupStep
               onNext={handleNext}
               onUpdateData={(data) => updateSetupData("notionConnection", data)}
+              initialValue={setupData.notionConnection?.pageId || ""}
             />
           )}
         </div>

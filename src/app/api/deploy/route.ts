@@ -56,8 +56,6 @@ export async function POST(request: Request) {
       }
     );
 
-
-
     if (!githubResponse.ok) {
       const error = await githubResponse.json();
       console.error("GitHub Repository Creation Error:", {
@@ -81,7 +79,7 @@ export async function POST(request: Request) {
 
     // const repoData = await githubResponse.json();
 
-    // 2. Vercelプロジェクトを作成
+    // 2. Vercelプロジェクトを作���
     const vercelResponse = await fetch("https://api.vercel.com/v9/projects", {
       method: "POST",
       headers: {
@@ -98,7 +96,6 @@ export async function POST(request: Request) {
         },
       }),
     });
-
 
     const responseData = await vercelResponse.json();
 
@@ -160,10 +157,10 @@ export async function POST(request: Request) {
             repoId: project.link.repoId,
           },
           target: "production",
+          alias: [`${blogUrl}.notioncms.app`],
         }),
       }
     );
-
 
     const deploymentData = await deploymentResponse.json();
 
