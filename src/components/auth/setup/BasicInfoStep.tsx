@@ -68,7 +68,8 @@ export function BasicInfoStep({
               例: my-blog, tech-notes, portfolio
             </p>
             <p className="text-sm text-muted-foreground">
-              ※ 指定したURLが既に使用されている場合、自動的に別のURLが割り当てられます
+              ※
+              指定したURLが既に使用されている場合、自動的に別のURLが割り当てられます
             </p>
           </div>
           {showError && (

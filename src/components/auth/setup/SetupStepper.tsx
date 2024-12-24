@@ -341,7 +341,7 @@ export function SetupStepper() {
         <div className="min-h-[400px]">
           {activeStep === 0 && (
             <BasicInfoStep
-              onUpdateData={(data) => updateSetupData("basicInfo", data)}
+              onUpdateData={(data: any) => updateSetupData("basicInfo", data)}
               initialValue={setupData.basicInfo?.url || ""}
             />
           )}
