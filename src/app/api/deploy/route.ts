@@ -128,6 +128,7 @@ export async function POST(request: Request) {
           value: pageId,
           type: "encrypted",
           target: ["production", "preview"],
+          //デプロイ後の完全なURLも後で追加する。(https://○○.notioncms.vercel.com)
         }),
       }
     );
