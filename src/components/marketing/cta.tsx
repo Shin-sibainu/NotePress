@@ -13,7 +13,7 @@ export function CTA() {
               ブログを始める準備はできましたか？
             </h2>
             <p className="text-xl text-muted-foreground mb-8">
-              すでに多くのクリエイターがNotionCMSでブログを公開しています。
+              すでに多くのクリエイターがNotePressでブログを公開しています。
             </p>
             <Link href={"/setup"}>
               <Button size="lg" className="group">

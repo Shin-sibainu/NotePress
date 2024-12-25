@@ -10,7 +10,7 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata = {
-  title: "NotionCMS",
+  title: "NotePress",
   description: "NotionをCMSとして活用するブログプラットフォーム",
 };
 

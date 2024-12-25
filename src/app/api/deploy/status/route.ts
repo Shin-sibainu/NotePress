@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -32,21 +31,23 @@ export async function GET(request: Request) {
     );
     const projectData = await projectResponse.json();
 
+    // let finalUrl;
+    // if (projectData.latestDeployments?.length > 0) {
+    //   // プロジェクトの最新の本番デプロイメントURLを使用
+    //   const productionDeployment = projectData.latestDeployments.find(
+    //     (d: any) => d.target === "production"
+    //   );
+    //   if (productionDeployment) {
+    //     finalUrl = `${projectData.name}.vercel.app`;
+    //   } else {
+    //     finalUrl = statusData.url;
+    //   }
+    // } else {
+    //   finalUrl = statusData.url;
+    // }
+
     // 最終的なプロジェクトURL
-    let finalUrl;
-    if (projectData.latestDeployments?.length > 0) {
-      // プロジェクトの最新の本番デプロイメントURLを使用
-      const productionDeployment = projectData.latestDeployments.find(
-        (d: any) => d.target === "production"
-      );
-      if (productionDeployment) {
-        finalUrl = `${projectData.name}.vercel.app`;
-      } else {
-        finalUrl = statusData.url;
-      }
-    } else {
-      finalUrl = statusData.url;
-    }
+    const finalUrl = `${projectData.name}.notepress.xyz`;
 
     // ビルドの進行状況を計算
     let buildProgress = 0;

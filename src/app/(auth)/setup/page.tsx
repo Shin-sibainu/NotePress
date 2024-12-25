@@ -26,7 +26,7 @@ export default function SetupPage() {
               whileHover={{ scale: 1.05 }}
             >
               <Sparkles className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold">NotionCMS</span>
+              <span className="text-xl font-bold">NotePress</span>
             </motion.div>
           </Link>
           <Button variant="ghost">

@@ -158,7 +158,7 @@ export async function POST(request: Request) {
             repoId: project.link.repoId,
           },
           target: "production",
-          alias: [`${blogUrl}.notioncms.app`],
+          alias: [`${blogUrl}.notepress.xyz`],
         }),
       }
     );

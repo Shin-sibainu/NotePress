@@ -57,7 +57,7 @@ export function BasicInfoStep({
               />
             </div>
             <span className="text-lg text-muted-foreground">
-              .notioncms.app
+              .notepress.xyz
             </span>
           </div>
           <div className="mt-2 space-y-1">

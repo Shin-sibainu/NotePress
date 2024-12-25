@@ -51,7 +51,7 @@ export function DashboardSidebar() {
         className="flex h-16 items-center gap-2 border-b border-border px-6"
       >
         <Sparkles className="h-6 w-6 text-primary" />
-        <span className="text-xl font-bold">NotionCMS</span>
+        <span className="text-xl font-bold">NotePress</span>
       </Link>
 
       <nav className="space-y-1 p-4">
