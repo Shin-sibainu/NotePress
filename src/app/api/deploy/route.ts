@@ -58,22 +58,32 @@ export async function POST(request: Request) {
 
     if (!githubResponse.ok) {
       const error = await githubResponse.json();
-      console.error("GitHub Repository Creation Error:", {
-        status: githubResponse.status,
-        headers: githubResponse.headers,
-        error,
-      });
 
-      if (githubResponse.status === 403) {
-        throw new Error(
-          `GitHubリポジトリの作成に失敗しました: アクセス権限が不足しています。Personal Access Tokenの権限設定を確認してください。`
+      // リポジトリ名の重複エラーをチェック
+      if (
+        error.message ===
+          "Could not clone: Name already exists on this account" ||
+        error.errors?.includes(
+          "Could not clone: Name already exists on this account"
+        )
+      ) {
+        return NextResponse.json(
+          {
+            error: `ドメイン「${blogUrl}」は既に使用されています。別のドメイン名を試してください。`,
+            code: "DOMAIN_EXISTS",
+          },
+          { status: 409 }
         );
       }
 
-      throw new Error(
-        `GitHubリポジトリの作成に失敗しました (${
-          githubResponse.status
-        }): ${JSON.stringify(error)}`
+      // その他のエラー
+      return NextResponse.json(
+        {
+          error:
+            "予期せぬエラーが発生しました。しばらく時間をおいて再度お試しください。",
+          code: "UNKNOWN_ERROR",
+        },
+        { status: 500 }
       );
     }
 
