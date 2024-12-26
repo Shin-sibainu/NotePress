@@ -79,7 +79,7 @@ export async function POST(request: Request) {
 
     // const repoData = await githubResponse.json();
 
-    // 2. Vercelプロジェクトを作���
+    // 2. Vercelプロジェクトを作成
     const vercelResponse = await fetch("https://api.vercel.com/v9/projects", {
       method: "POST",
       headers: {
@@ -115,30 +115,47 @@ export async function POST(request: Request) {
     const project = responseData;
 
     // 3. 環境変数を設定
-    const envResponse = await fetch(
-      `https://api.vercel.com/v9/projects/${project.id}/env`,
+    const envVariables = [
       {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${VERCEL_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          key: "NOTION_PAGE_ID",
-          value: pageId,
-          type: "encrypted",
-          target: ["production", "preview"],
-          //デプロイ後の完全なURLも後で追加する。(https://○○.notioncms.vercel.com)
-        }),
-      }
-    );
+        key: "NOTION_PAGE_ID",
+        value: pageId,
+        type: "encrypted",
+        target: ["production", "preview"],
+      },
+      {
+        key: "NEXT_PUBLIC_BASE_URL",
+        value: `https://${blogUrl}.notepress.xyz`,
+        type: "plain",
+        target: ["production", "preview"],
+      },
+    ];
 
-    if (!envResponse.ok) {
-      const envError = await envResponse.json();
-      throw new Error(
-        `環境変数の設定に失敗しました: ${JSON.stringify(envError)}`
+    // 環境変数を1つずつ設定
+    for (const env of envVariables) {
+      await fetch(
+        `https://api.vercel.com/v10/projects/${project.id}/env?upsert=true`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${VERCEL_TOKEN}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(env),
+        }
       );
     }
+
+    // 3.5 カスタムドメインを設定（必要）
+    await fetch(`https://api.vercel.com/v9/projects/${project.id}/domains`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${VERCEL_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: `${blogUrl}.notepress.xyz`,
+      }),
+    });
 
     // 4. デプロイメントをトリガー
     const deploymentResponse = await fetch(
