@@ -1,46 +1,35 @@
-import { Card } from "@/components/ui/card";
-import Image from "next/image";
 import Link from "next/link";
-
-const templates = [
-  {
-    id: "minimalist",
-    name: "ミニマル",
-    description: "シンプルで読みやすいデザイン",
-    image: "/templates/minimalist.jpg",
-  },
-  {
-    id: "magazine",
-    name: "マガジン",
-    description: "雑誌のようなレイアウト",
-    image: "/templates/magazine.jpg",
-  },
-];
+import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { TemplateFilters } from "@/components/templates/TemplateFilters";
+import { TemplateGrid } from "@/components/templates/TemplateGrid";
 
 export default function TemplatesPage() {
   return (
-    <div className="container mx-auto px-4 py-24">
-      <h1 className="text-4xl font-bold mb-12 text-center">テンプレート</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {templates.map((template) => (
-          <Link key={template.id} href={`/templates/${template.id}`}>
-            <Card className="overflow-hidden group cursor-pointer">
-              <div className="relative aspect-video">
-                <Image
-                  src={template.image}
-                  alt={template.name}
-                  fill
-                  className="object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div className="p-4">
-                <h2 className="text-xl font-semibold mb-2">{template.name}</h2>
-                <p className="text-muted-foreground">{template.description}</p>
-              </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
+    <div className="relative min-h-screen bg-background/50 text-foreground">
+      <header className="fixed top-0 w-full z-50 bg-background/80 backdrop-blur-sm border-b border-border">
+        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+          <Button variant="ghost" asChild>
+            <Link href="/">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              ホームに戻る
+            </Link>
+          </Button>
+        </div>
+      </header>
+
+      <main className="container mx-auto px-4 pt-24 pb-16">
+        <div className="max-w-3xl mx-auto text-center mb-12">
+          <h1 className="text-4xl font-bold mb-4">ブログテンプレート</h1>
+          <p className="text-lg text-muted-foreground">
+            プロフェッショナルなデザインのテンプレートからお選びください。
+            すべてのテンプレートはあなたのスタイルに合わせてカスタマイズ可能です。
+          </p>
+        </div>
+
+        <TemplateFilters />
+        <TemplateGrid />
+      </main>
     </div>
   );
 }
