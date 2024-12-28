@@ -15,7 +15,6 @@ interface NotionSetupStepProps {
 }
 
 export default function NotionSetupStep({
-  onNext,
   onUpdateData,
   initialValue,
 }: NotionSetupStepProps) {

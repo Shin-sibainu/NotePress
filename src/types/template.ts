@@ -7,4 +7,5 @@ export interface Template {
   status: 'ready' | 'coming_soon';
   featured?: boolean;
   tags: string[];
+  demoUrl: string;
 } 

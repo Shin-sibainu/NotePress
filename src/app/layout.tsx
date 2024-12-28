@@ -2,6 +2,10 @@ import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 
+import {
+  ClerkProvider,
+} from '@clerk/nextjs'
+
 const notoSansJP = Noto_Sans_JP({
   subsets: ["latin"],
   variable: "--font-noto-sans-jp",
@@ -23,11 +27,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    <ClerkProvider>
     <html lang="ja" className={`${notoSansJP.className}`}>
       <body className="font-noto-sans">
         {children}
         <Toaster />
       </body>
     </html>
+    </ClerkProvider>
   );
 }

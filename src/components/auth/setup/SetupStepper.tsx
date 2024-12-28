@@ -1,6 +1,6 @@
 //14e1dcf229c28018bcbbe57ab6e92e8c
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ArrowRight,
   Loader2,
@@ -19,6 +19,8 @@ import { useRouter } from "next/navigation";
 import { DeployStep, DeployStepStatus } from "@/types/deploy";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { useUser } from "@clerk/nextjs";
+import { AuthStep } from "./AuthStep";
 
 interface SetupData {
   basicInfo: { url: string | null } | null;
@@ -56,6 +58,7 @@ const INITIAL_STEPS: DeployStep[] = [
 export function SetupStepper() {
   const { toast } = useToast();
   const router = useRouter();
+  const { isSignedIn } = useUser();
   const [activeStep, setActiveStep] = useState(0);
   const [isDeploying, setIsDeploying] = useState(false);
   const [setupData, setSetupData] = useState<SetupData>({
@@ -68,6 +71,12 @@ export function SetupStepper() {
   const [deploySteps, setDeploySteps] = useState<DeployStep[]>(INITIAL_STEPS);
   const [progress, setProgress] = useState(0);
 
+  useEffect(() => {
+    if (isSignedIn && activeStep === 0) {
+      setActiveStep(1);
+    }
+  }, [isSignedIn, activeStep]);
+
   const handleNext = () => {
     setActiveStep((prevStep) => prevStep + 1);
   };
@@ -77,7 +86,11 @@ export function SetupStepper() {
   };
 
   const handleComplete = async () => {
-    if (!setupData.basicInfo?.url || !setupData.notionConnection?.pageId) {
+    if (
+      !setupData.basicInfo?.url ||
+      !setupData.notionConnection?.pageId ||
+      !setupData.selectedTheme
+    ) {
       toast({
         variant: "destructive",
         title: "エラー",
@@ -210,15 +223,17 @@ export function SetupStepper() {
 
   const isStepValid = (step: number): boolean => {
     switch (step) {
-      case 0:
+      case 0: // 認証ステップ
+        return isSignedIn ?? false;
+      case 1: // URLの設定
         return Boolean(
           setupData.basicInfo?.url && setupData.basicInfo.url.length > 0
         );
-      case 1:
+      case 2: // テーマ選択
         return Boolean(
           setupData.selectedTheme && setupData.selectedTheme.length > 0
         );
-      case 2:
+      case 3: // Notion設定
         return Boolean(
           setupData.notionConnection?.pageId &&
             setupData.notionConnection.pageId.length > 0
@@ -333,26 +348,27 @@ export function SetupStepper() {
       <div className="mb-12">
         <div className="flex items-center justify-between mb-6">
           <span className="text-sm text-muted-foreground">
-            セットアップ {activeStep + 1}/3
+            セットアップ {activeStep + 1}/4
           </span>
-          <Progress value={((activeStep + 1) / 3) * 100} className="w-40" />
+          <Progress value={((activeStep + 1) / 4) * 100} className="w-40" />
         </div>
 
         <div className="min-h-[400px]">
-          {activeStep === 0 && (
+          {activeStep === 0 && !isSignedIn && <AuthStep />}
+          {activeStep === 1 && (
             <BasicInfoStep
-              onUpdateData={(data: any) => updateSetupData("basicInfo", data)}
+              onUpdateData={(data) => updateSetupData("basicInfo", data)}
               initialValue={setupData.basicInfo?.url || ""}
             />
           )}
-          {activeStep === 1 && (
+          {activeStep === 2 && (
             <ThemeSelectionStep
               onComplete={handleNext}
               onUpdateData={(theme) => updateSetupData("selectedTheme", theme)}
               initialValue={setupData.selectedTheme || null}
             />
           )}
-          {activeStep === 2 && (
+          {activeStep === 3 && (
             <NotionSetupStep
               onNext={handleNext}
               onUpdateData={(data) => updateSetupData("notionConnection", data)}
@@ -379,7 +395,7 @@ export function SetupStepper() {
           }`}
           size="lg"
           onClick={() => {
-            if (activeStep < 2) {
+            if (activeStep < 3) {
               handleNext();
             } else {
               handleComplete();
@@ -387,7 +403,7 @@ export function SetupStepper() {
           }}
           disabled={!isStepValid(activeStep) || isDeploying}
         >
-          {activeStep === 2 ? (
+          {activeStep === 3 ? (
             <>
               {isDeploying ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
