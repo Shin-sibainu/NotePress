@@ -34,6 +34,7 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
   });
   const [isCompleted, setIsCompleted] = useState(false);
   const [blogUrl, setBlogUrl] = useState<string | null>(null);
+  const [buildStartTime] = useState(Date.now());
 
   const buildSteps: BuildStep[] = [
     { label: "依存関係のインストール", progress: 10 },
@@ -106,9 +107,8 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
       }
     };
 
-    const buildStartTime = Date.now();
     checkStatus();
-  }, [deploymentId, status.progress]);
+  }, [deploymentId, status.progress, buildStartTime]);
 
   useEffect(() => {
     if (status.phase === "BUILDING") {
