@@ -5,8 +5,7 @@ import {
   ArrowRight,
   Loader2,
   Rocket,
-  CheckCircle,
-  XCircle,
+
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,7 +15,7 @@ import ThemeSelectionStep from "./ThemeSelectionStep";
 import NotionSetupStep from "./NotionSetupStep";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { DeployStep, DeployStepStatus } from "@/types/deploy";
+import { DeployStep } from "@/types/deploy";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
@@ -100,20 +99,16 @@ export function SetupStepper() {
     }
 
     setIsDeploying(true);
-    updateDeployStatus("INIT", "loading");
 
     try {
       // NotionページIDの検証
       const validateResponse = await fetch("/api/notion/validate", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pageId: setupData.notionConnection.pageId }),
       });
 
       const validateData = await validateResponse.json();
-
       if (!validateData.valid) {
         toast({
           variant: "destructive",
@@ -125,15 +120,10 @@ export function SetupStepper() {
         return;
       }
 
-      updateDeployStatus("INIT", "complete");
-      updateDeployStatus("GITHUB", "loading");
-
       // デプロイメントの開始
       const deployResponse = await fetch("/api/deploy", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           blogUrl: setupData.basicInfo.url,
           pageId: setupData.notionConnection.pageId,
@@ -142,74 +132,22 @@ export function SetupStepper() {
       });
 
       const deployData = await deployResponse.json();
-
       if (!deployResponse.ok) throw new Error(deployData.error);
 
-      updateDeployStatus("GITHUB", "complete");
-      // ビルドフェーズを開始
-      updateDeployStatus("BUILD", "loading", "ビルドの準備中...");
+      // デプロイ情報をローカルストレージに保存
+      localStorage.setItem("deploymentId", deployData.deploymentId);
+      localStorage.setItem("blogUrl", setupData.basicInfo.url);
+      localStorage.setItem("setupData", JSON.stringify(setupData));
 
-      // デプロイメントの状態を監視
-      const checkDeployment = async () => {
-        if (attempts >= maxAttempts) {
-          setIsDeploying(false);
-          throw new Error("デプロイメントがタイムアウトしました");
-        }
-
-        try {
-          const statusResponse = await fetch(
-            `/api/deploy/status?deploymentId=${deployData.deploymentId}`
-          );
-          const statusData = await statusResponse.json();
-
-          // 進捗状況とメッセージを更新
-          switch (statusData.phase) {
-            case "QUEUED":
-              updateDeployStatus("BUILD", "loading", "ビルドキューに追加中...");
-              break;
-            case "INITIALIZING":
-              updateDeployStatus(
-                "BUILD",
-                "loading",
-                "依存関係をインストール中..."
-              );
-              break;
-            case "BUILDING":
-              updateDeployStatus("BUILD", "loading", "ビルド実行中...");
-              break;
-            case "READY":
-              updateDeployStatus("BUILD", "complete", "ビルド完了");
-              updateDeployStatus("DEPLOY", "complete", "デプロイ完了！");
-              const cleanUrl = statusData.url.replace(/^https?:\/\//, "");
-              localStorage.setItem("deployedBlogUrl", cleanUrl);
-              router.push("/dashboard");
-              return;
-          }
-
-          // 進捗が後退しないように保証
-          setProgress((prevProgress) =>
-            Math.max(prevProgress, statusData.buildProgress)
-          );
-
-          setAttempts((prev) => prev + 1);
-          setTimeout(checkDeployment, 3000);
-        } catch (error) {
-          console.error("Failed to check deployment status:", error);
-          updateDeployStatus("DEPLOY", "error");
-        }
-      };
-
-      checkDeployment();
+      // すぐにダッシュボードへ遷移
+      router.push("/dashboard?deploying=true");
     } catch (error) {
       toast({
         variant: "destructive",
         title: "エラー",
         description:
-          error instanceof Error
-            ? error.message
-            : "デプロイ中にエラーが発生しました",
+          error instanceof Error ? error.message : "デプロイに失敗しました",
       });
-      console.error("Error during deployment:", error);
       setIsDeploying(false);
     }
   };
@@ -243,108 +181,8 @@ export function SetupStepper() {
     }
   };
 
-  const updateDeployStatus = (
-    stepId: string,
-    status: DeployStepStatus,
-    description?: string
-  ) => {
-    setDeploySteps((prev) =>
-      prev.map((step) =>
-        step.id === stepId
-          ? { ...step, status, description: description || step.description }
-          : step
-      )
-    );
-
-    // 進捗状況を更新
-    const stepIndex = deploySteps.findIndex((step) => step.id === stepId);
-    if (status === "complete") {
-      setProgress(((stepIndex + 1) / deploySteps.length) * 100);
-    } else if (status === "loading") {
-      setProgress((stepIndex / deploySteps.length) * 100);
-    }
-  };
-
   return (
     <Card className="w-full max-w-3xl p-12 bg-card/50 backdrop-blur-sm">
-      {isDeploying && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm rounded-lg z-50">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-lg p-6"
-          >
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold">ブログを構築中...</h2>
-                <div className="space-y-1">
-                  <Progress value={progress} className="h-2" />
-                  <p className="text-sm text-muted-foreground text-right">
-                    {Math.round(progress)}%
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {deploySteps.map((step, index) => (
-                  <motion.div
-                    key={step.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className={cn(
-                      "flex items-center gap-4 p-4 rounded-lg transition-colors duration-200",
-                      step.status === "complete" && "bg-emerald-500/10",
-                      step.status === "loading" && "bg-primary/10",
-                      step.status === "error" && "bg-destructive/10"
-                    )}
-                  >
-                    <div className="flex-shrink-0">
-                      {step.status === "complete" && (
-                        <motion.div
-                          initial={{ scale: 0.5, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ type: "spring", duration: 0.3 }}
-                        >
-                          <CheckCircle className="h-5 w-5 text-emerald-500" />
-                        </motion.div>
-                      )}
-                      {step.status === "loading" && (
-                        <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                      )}
-                      {step.status === "error" && (
-                        <XCircle className="h-5 w-5 text-destructive" />
-                      )}
-                      {step.status === "pending" && (
-                        <div className="h-5 w-5 rounded-full border-2 border-muted" />
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <p
-                        className={cn(
-                          "font-medium",
-                          step.status === "complete" && "text-emerald-500",
-                          step.status === "loading" && "text-primary",
-                          step.status === "error" && "text-destructive"
-                        )}
-                      >
-                        {step.label}
-                      </p>
-                      {step.description && (
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                          {step.description}
-                        </p>
-                      )}
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
-
       <div className="mb-12">
         <div className="flex items-center justify-between mb-6">
           <span className="text-sm text-muted-foreground">
@@ -363,14 +201,12 @@ export function SetupStepper() {
           )}
           {activeStep === 2 && (
             <ThemeSelectionStep
-              onComplete={handleNext}
               onUpdateData={(theme) => updateSetupData("selectedTheme", theme)}
               initialValue={setupData.selectedTheme || null}
             />
           )}
           {activeStep === 3 && (
             <NotionSetupStep
-              onNext={handleNext}
               onUpdateData={(data) => updateSetupData("notionConnection", data)}
               initialValue={setupData.notionConnection?.pageId || ""}
             />
@@ -390,9 +226,7 @@ export function SetupStepper() {
           </Button>
         )}
         <Button
-          className={`ml-auto ${
-            !isStepValid(activeStep) || isDeploying ? "cursor-not-allowed" : ""
-          }`}
+          className="ml-auto"
           size="lg"
           onClick={() => {
             if (activeStep < 3) {
@@ -406,16 +240,16 @@ export function SetupStepper() {
           {activeStep === 3 ? (
             <>
               {isDeploying ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
               ) : (
-                <Rocket className="h-5 w-5" />
+                <Rocket className="h-5 w-5 mr-2" />
               )}
-              {isDeploying ? "構築中..." : "完了"}
+              {isDeploying ? "ダッシュボードへ移動中..." : "完了"}
             </>
           ) : (
             <>
               次へ
-              <ArrowRight className="h-5 w-5" />
+              <ArrowRight className="h-5 w-5 ml-2" />
             </>
           )}
         </Button>

@@ -34,13 +34,11 @@ const themes = [
 ];
 
 interface ThemeSelectionStepProps {
-  onComplete: () => void;
   onUpdateData: (theme: string | null) => void;
   initialValue: string | null;
 }
 
 export default function ThemeSelectionStep({
-  onComplete,
   onUpdateData,
   initialValue,
 }: ThemeSelectionStepProps) {

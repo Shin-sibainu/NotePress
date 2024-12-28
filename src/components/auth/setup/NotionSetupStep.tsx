@@ -9,7 +9,6 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface NotionSetupStepProps {
-  onNext: () => void;
   onUpdateData: (data: any) => void;
   initialValue: string;
 }
