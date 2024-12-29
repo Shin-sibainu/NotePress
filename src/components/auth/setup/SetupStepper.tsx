@@ -1,12 +1,7 @@
 //14e1dcf229c28018bcbbe57ab6e92e8c
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
-import {
-  ArrowRight,
-  Loader2,
-  Rocket,
-
-} from "lucide-react";
+import { ArrowRight, Loader2, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -240,11 +235,19 @@ export function SetupStepper() {
           {activeStep === 3 ? (
             <>
               {isDeploying ? (
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                  <span className="hidden sm:inline">
+                    ダッシュボードへ移動中...
+                  </span>
+                  <span className="sm:hidden">移動中...</span>
+                </>
               ) : (
-                <Rocket className="h-5 w-5 mr-2" />
+                <>
+                  <Rocket className="h-5 w-5 mr-2" />
+                  <span>完了</span>
+                </>
               )}
-              {isDeploying ? "ダッシュボードへ移動中..." : "完了"}
             </>
           ) : (
             <>
