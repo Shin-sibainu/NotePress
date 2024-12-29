@@ -9,7 +9,6 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface NotionSetupStepProps {
-  onNext: () => void;
   onUpdateData: (data: any) => void;
   initialValue: string;
 }
@@ -101,7 +100,7 @@ export default function NotionSetupStep({
                 asChild
               >
                 <Link
-                  href="https://minimalist-three.vercel.app/post/how-to-get-notion-page-id"
+                  href="https://shin-blog.notepress.xyz/post/how-to-get-notion-page-id"
                   target="_blank"
                 >
                   <HelpCircle className="h-5 w-5" />
