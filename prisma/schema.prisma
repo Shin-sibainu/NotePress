@@ -1,0 +1,53 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")  // 直接接続用URL
+}
+
+// ユーザーモデル
+model User {
+  id        String   @id
+  email     String   @unique
+  name      String?
+  blogs     Blog[]
+  purchases Purchase[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ブログモデル
+model Blog {
+  id            String   @id @default(cuid())
+  url           String   @unique
+  domain        String?  @unique
+  notionPageId  String
+  theme         String
+  userId        String
+  user          User     @relation(fields: [userId], references: [id])
+  isPublished   Boolean  @default(false)
+  publishedAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// テンプレート購入履歴
+model Purchase {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  templateId    String    // テンプレートの識別子
+  amount        Int       // 支払い金額
+  stripePaymentId String  @unique
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+}
+
+
+

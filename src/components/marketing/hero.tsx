@@ -12,17 +12,19 @@ export function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-5xl md:text-7xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500"
+            className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight"
           >
-            あなたのNotionが
-            <br />
-            美しいブログに変わる
+            <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-600 dark:from-primary dark:via-purple-400 dark:to-pink-500">
+              あなたのNotionが
+              <br />
+              美しいブログに変わる
+            </span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="text-xl text-muted-foreground max-w-2xl mx-auto"
+            className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto"
           >
             コーディング不要で、たった数分でプロフェッショナルなブログを作成。
             あなたのNotionを連携するだけで始められます。
