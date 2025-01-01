@@ -3,17 +3,17 @@ import Link from "next/link";
 const footerLinks = {
   product: [
     { name: "テンプレート", href: "/templates" },
-    { name: "料金プラン", href: "/pricing" },
-    { name: "機能", href: "/features" },
+    // { name: "機能", href: "/features" },
+    // { name: "料金プラン", href: "/pricing" },
   ],
   support: [
-    { name: "ドキュメント", href: "/docs" },
-    { name: "お問い合わせ", href: "/contact" },
+    // { name: "ドキュメント", href: "/docs" },
+    { name: "お問い合わせ", href: "https://skinny-talos-8be.notion.site/16e1dcf229c280088788d3daf3d2927c?pvs=105" },
   ],
   legal: [
     { name: "利用規約", href: "/terms" },
     { name: "プライバシーポリシー", href: "/privacy" },
-    { name: "特定商取引法に基づく表記", href: "/legal" },
+    // { name: "特定商取引法に基づく表記", href: "/legal" },
   ],
 };
 

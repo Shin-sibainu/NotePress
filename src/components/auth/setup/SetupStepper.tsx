@@ -10,9 +10,6 @@ import ThemeSelectionStep from "./ThemeSelectionStep";
 import NotionSetupStep from "./NotionSetupStep";
 import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
-import { DeployStep } from "@/types/deploy";
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { useUser } from "@clerk/nextjs";
 import { AuthStep } from "./AuthStep";
 
@@ -22,32 +19,6 @@ interface SetupData {
   selectedTheme: string | null;
 }
 
-const INITIAL_STEPS: DeployStep[] = [
-  {
-    id: "INIT",
-    label: "初期化",
-    status: "pending",
-    description: "プロジェクトの初期設定を行っています",
-  },
-  {
-    id: "GITHUB",
-    label: "リポジトリ作成",
-    status: "pending",
-    description: "GitHubリポジトリを作成しています",
-  },
-  {
-    id: "BUILD",
-    label: "ビルド",
-    status: "pending",
-    description: "アプリケーションをビルドしています",
-  },
-  {
-    id: "DEPLOY",
-    label: "デプロイ",
-    status: "pending",
-    description: "Webサイトをデプロイしています",
-  },
-];
 
 export function SetupStepper() {
   const { toast } = useToast();
@@ -60,10 +31,7 @@ export function SetupStepper() {
     notionConnection: null,
     selectedTheme: null,
   });
-  const [attempts, setAttempts] = useState(0);
-  const maxAttempts = 60;
-  const [deploySteps, setDeploySteps] = useState<DeployStep[]>(INITIAL_STEPS);
-  const [progress, setProgress] = useState(0);
+  // deploySteps, progress, attempts などの未使用の state を削除
 
   useEffect(() => {
     if (isSignedIn && activeStep === 0) {
@@ -108,11 +76,25 @@ export function SetupStepper() {
         toast({
           variant: "destructive",
           title: "Notionデータベースエラー",
-          description:
-            validateData.error || "Notionデータベースの設定を確認してください",
+          description: validateData.error || "Notionデータベースの設定を確認してください",
         });
         setIsDeploying(false);
         return;
+      }
+
+      // デログ情報とPurchase情報を保存
+      const response = await fetch("/api/blog/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          url: setupData.basicInfo.url,
+          notionPageId: setupData.notionConnection.pageId,
+          theme: setupData.selectedTheme,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("ブログの作成に失敗しました");
       }
 
       // デプロイメントの開始
@@ -134,14 +116,12 @@ export function SetupStepper() {
       localStorage.setItem("blogUrl", setupData.basicInfo.url);
       localStorage.setItem("setupData", JSON.stringify(setupData));
 
-      // すぐにダッシュボードへ遷移
       router.push("/dashboard?deploying=true");
     } catch (error) {
       toast({
         variant: "destructive",
         title: "エラー",
-        description:
-          error instanceof Error ? error.message : "デプロイに失敗しました",
+        description: error instanceof Error ? error.message : "デプロイに失敗しました",
       });
       setIsDeploying(false);
     }

@@ -1,6 +1,5 @@
 "use client";
 
-
 import { GradientBackground } from "@/components/GradientBackground";
 import { Hero } from "@/components/marketing/hero";
 import { Features } from "@/components/marketing/features";
@@ -8,6 +7,7 @@ import { Performance } from "@/components/marketing/performance";
 import { Templates } from "@/components/marketing/templates";
 import { CTA } from "@/components/marketing/cta";
 import { Footer } from "@/components/layouts/footer";
+import { FAQ } from "@/components/marketing/faq";
 
 export default function Home() {
   return (
@@ -18,7 +18,9 @@ export default function Home() {
       <Features />
       <Performance />
       <Templates />
+      <FAQ/>
       <CTA />
+
       <Footer />
     </div>
   );

@@ -65,22 +65,24 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
             progress = 10;
             break;
           case "BUILDING":
+            const elapsedTime = (Date.now() - buildStartTime) / 1000;
             const buildProgress = Math.min(
-              40 + Math.floor((Date.now() - buildStartTime) / 1000) * 2,
-              70
+              40 + Math.floor(elapsedTime / 2) * 3,
+              85
             );
             message = "ブログをビルド中...";
             progress = buildProgress;
             break;
           case "DEPLOYING":
             message = "ブログを公開中...";
-            progress = 85;
+            progress = 90;
             break;
           case "READY":
             const storedBlogUrl = localStorage.getItem("blogUrl");
             const fullUrl = `https://${storedBlogUrl}.notepress.xyz`;
             setBlogUrl(fullUrl);
             setIsCompleted(true);
+            message = "デプロイ完了";
             progress = 100;
             break;
           case "ERROR":
@@ -95,15 +97,12 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
         });
 
         if (data.phase !== "READY" && data.phase !== "ERROR") {
-          setTimeout(checkStatus, 3000);
+          const interval = data.phase === "BUILDING" ? 8000 : 5000;
+          setTimeout(checkStatus, interval);
         }
       } catch (error) {
         console.error("Failed to check deployment status:", error);
-        setStatus({
-          phase: "ERROR",
-          message: "エラーが発生しました",
-          progress: status.progress,
-        });
+        setTimeout(checkStatus, 10000);
       }
     };
 
