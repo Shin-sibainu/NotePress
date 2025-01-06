@@ -49,6 +49,21 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
   const [currentBuildStep, setCurrentBuildStep] = useState(0);
 
   useEffect(() => {
+    // ローカルストレージからデプロイ状態を確認
+    const deploymentStatus = localStorage.getItem(`deployment_${deploymentId}`);
+    if (deploymentStatus === "completed") {
+      const storedBlogUrl = localStorage.getItem("blogUrl");
+      const fullUrl = `https://${storedBlogUrl}.notepress.xyz`;
+      setBlogUrl(fullUrl);
+      setIsCompleted(true);
+      setStatus({
+        phase: "READY",
+        message: "デプロイ完了",
+        progress: 100,
+      });
+      return;
+    }
+
     const checkStatus = async () => {
       try {
         const response = await fetch(
@@ -84,6 +99,8 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
             setIsCompleted(true);
             message = "デプロイ完了";
             progress = 100;
+            // デプロイ完了状態を保存
+            localStorage.setItem(`deployment_${deploymentId}`, "completed");
             break;
           case "ERROR":
             message = "エラーが発生しました";
