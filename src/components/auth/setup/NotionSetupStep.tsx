@@ -96,14 +96,17 @@ export default function NotionSetupStep({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-12 w-12 shrink-0"
+                className="h-12 w-12 shrink-0 relative group animate-pulse hover:animate-none"
                 asChild
               >
                 <Link
                   href="https://shin-blog.notepress.xyz/post/how-to-get-notion-page-id"
                   target="_blank"
                 >
-                  <HelpCircle className="h-5 w-5" />
+                  <HelpCircle className="h-5 w-5 text-primary" />
+                  <span className="absolute -top-8 right-0 w-max opacity-0 group-hover:opacity-100 transition-opacity bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
+                    URLの取得方法を確認
+                  </span>
                 </Link>
               </Button>
             </div>
@@ -145,7 +148,7 @@ export default function NotionSetupStep({
               <li>「公開」を選択</li>
             </ol>
             <p className="text-xs mt-2 text-amber-500/80 font-medium">
-              ※ この設定がないと、NotionCMSがデータベースにアクセスできません
+              ※ この設定がないと、NotePressがデータベースにアクセスできません
             </p>
           </div>
         </div>

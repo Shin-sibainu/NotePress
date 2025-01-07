@@ -30,7 +30,7 @@ const guideItems = [
     icon: Globe,
     title: "5. 公開する",
     description:
-      "「Published」をオンにすると自動的に反映されます(※反映には5分程度かかる場合があります)",
+      "「Published」をオンにすると自動的に反映されます(※反映には1分程度かかります。何度かページをリロードすると更新が確認できます。)",
   },
 ];
 
@@ -40,9 +40,12 @@ export function WritingGuide() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.2 }}
+      className="relative"
     >
       <Card className="p-6 bg-card/50 backdrop-blur-sm h-full">
-        <h2 className="text-xl font-bold mb-6">NotionCMSの記事の書き方</h2>
+        <h2 className="text-xl font-bold mb-6">
+          Notionを使ったブログ記事の書き方
+        </h2>
         <div className="space-y-5">
           {guideItems.map((item, index) => (
             <div key={index} className="flex gap-4">
@@ -66,11 +69,15 @@ export function WritingGuide() {
           </div>
           <div className="relative aspect-video rounded-lg overflow-hidden bg-accent/20">
             <iframe
-              src="https://www.youtube.com/embed/your-video-id"
-              title="NotionCMSの使い方"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              className="absolute inset-0 w-full h-full"
+              src="https://player.vimeo.com/video/948201541?h=c8c3b6c2e1&color=0070f3&title=0&byline=0&portrait=0"
+              allow="autoplay; fullscreen; picture-in-picture"
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+              }}
             />
           </div>
           <p className="text-sm text-muted-foreground text-center">
@@ -78,7 +85,7 @@ export function WritingGuide() {
           </p>
         </div>
 
-        <div className="mt-6 flex justify-center">
+        {/* <div className="mt-6 flex justify-center">
           <Button variant="outline" size="sm" className="text-primary" asChild>
             <a
               href="https://docs.notioncms.app/guides/writing"
@@ -88,7 +95,7 @@ export function WritingGuide() {
               より詳しい解説を見る
             </a>
           </Button>
-        </div>
+        </div> */}
       </Card>
     </motion.div>
   );
