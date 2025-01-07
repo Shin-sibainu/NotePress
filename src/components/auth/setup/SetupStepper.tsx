@@ -1,4 +1,5 @@
-//14e1dcf229c28018bcbbe57ab6e92e8c
+"use client";
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { ArrowRight, Loader2, Rocket } from "lucide-react";
@@ -12,13 +13,13 @@ import { useToast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { AuthStep } from "./AuthStep";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 
 interface SetupData {
   basicInfo: { url: string | null } | null;
   notionConnection: { pageId: string | null } | null;
   selectedTheme: string | null;
 }
-
 
 export function SetupStepper() {
   const { toast } = useToast();
@@ -31,7 +32,7 @@ export function SetupStepper() {
     notionConnection: null,
     selectedTheme: null,
   });
-  // deploySteps, progress, attempts などの未使用の state を削除
+  const [isNavigating, setIsNavigating] = useState(false);
 
   useEffect(() => {
     if (isSignedIn && activeStep === 0) {
@@ -61,29 +62,12 @@ export function SetupStepper() {
       return;
     }
 
-    setIsDeploying(true);
-
     try {
-      // NotionページIDの検証
-      const validateResponse = await fetch("/api/notion/validate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pageId: setupData.notionConnection.pageId }),
-      });
+      setIsDeploying(true);
+      setIsNavigating(true);
 
-      const validateData = await validateResponse.json();
-      if (!validateData.valid) {
-        toast({
-          variant: "destructive",
-          title: "Notionデータベースエラー",
-          description: validateData.error || "Notionデータベースの設定を確認してください",
-        });
-        setIsDeploying(false);
-        return;
-      }
-
-      // デログ情報とPurchase情報を保存
-      const response = await fetch("/api/blog/create", {
+      // ブログ作成のみを行い、デプロイは一度だけ実行
+      const blogResponse = await fetch("/api/blog/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -93,11 +77,15 @@ export function SetupStepper() {
         }),
       });
 
-      if (!response.ok) {
+      if (!blogResponse.ok) {
         throw new Error("ブログの作成に失敗しました");
       }
 
-      // デプロイメントの開始
+      // デプロイ情報をローカルストレージに保存
+      localStorage.setItem("blogUrl", setupData.basicInfo.url);
+      localStorage.setItem("setupData", JSON.stringify(setupData));
+
+      // デプロイは一度だけ実行
       const deployResponse = await fetch("/api/deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -108,22 +96,23 @@ export function SetupStepper() {
         }),
       });
 
-      const deployData = await deployResponse.json();
-      if (!deployResponse.ok) throw new Error(deployData.error);
+      if (!deployResponse.ok) {
+        throw new Error("デプロイに失敗しました");
+      }
 
-      // デプロイ情報をローカルストレージに保存
+      const deployData = await deployResponse.json();
       localStorage.setItem("deploymentId", deployData.deploymentId);
-      localStorage.setItem("blogUrl", setupData.basicInfo.url);
-      localStorage.setItem("setupData", JSON.stringify(setupData));
 
       router.push("/dashboard?deploying=true");
     } catch (error) {
+      setIsNavigating(false);
+      setIsDeploying(false);
       toast({
         variant: "destructive",
         title: "エラー",
-        description: error instanceof Error ? error.message : "デプロイに失敗しました",
+        description:
+          error instanceof Error ? error.message : "デプロイに失敗しました",
       });
-      setIsDeploying(false);
     }
   };
 
@@ -157,86 +146,93 @@ export function SetupStepper() {
   };
 
   return (
-    <Card className="w-full max-w-3xl p-12 bg-card/50 backdrop-blur-sm">
-      <div className="mb-12">
-        <div className="flex items-center justify-between mb-6">
-          <span className="text-sm text-muted-foreground">
-            セットアップ {activeStep + 1}/4
-          </span>
-          <Progress value={((activeStep + 1) / 4) * 100} className="w-40" />
+    <>
+      <Card className="w-full max-w-3xl p-12 bg-card/50 backdrop-blur-sm">
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <span className="text-sm text-muted-foreground">
+              セットアップ {activeStep + 1}/4
+            </span>
+            <Progress value={((activeStep + 1) / 4) * 100} className="w-40" />
+          </div>
+
+          <div className="min-h-[400px]">
+            {activeStep === 0 && !isSignedIn && <AuthStep />}
+            {activeStep === 1 && (
+              <BasicInfoStep
+                onUpdateData={(data) => updateSetupData("basicInfo", data)}
+                initialValue={setupData.basicInfo?.url || ""}
+              />
+            )}
+            {activeStep === 2 && (
+              <ThemeSelectionStep
+                onUpdateData={(theme) =>
+                  updateSetupData("selectedTheme", theme)
+                }
+                initialValue={setupData.selectedTheme || null}
+              />
+            )}
+            {activeStep === 3 && (
+              <NotionSetupStep
+                onUpdateData={(data) =>
+                  updateSetupData("notionConnection", data)
+                }
+                initialValue={setupData.notionConnection?.pageId || ""}
+              />
+            )}
+          </div>
         </div>
 
-        <div className="min-h-[400px]">
-          {activeStep === 0 && !isSignedIn && <AuthStep />}
-          {activeStep === 1 && (
-            <BasicInfoStep
-              onUpdateData={(data) => updateSetupData("basicInfo", data)}
-              initialValue={setupData.basicInfo?.url || ""}
-            />
+        <div className="flex justify-between">
+          {activeStep > 0 && (
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleBack}
+              disabled={isDeploying}
+            >
+              戻る
+            </Button>
           )}
-          {activeStep === 2 && (
-            <ThemeSelectionStep
-              onUpdateData={(theme) => updateSetupData("selectedTheme", theme)}
-              initialValue={setupData.selectedTheme || null}
-            />
-          )}
-          {activeStep === 3 && (
-            <NotionSetupStep
-              onUpdateData={(data) => updateSetupData("notionConnection", data)}
-              initialValue={setupData.notionConnection?.pageId || ""}
-            />
-          )}
-        </div>
-      </div>
-
-      <div className="flex justify-between">
-        {activeStep > 0 && (
           <Button
-            variant="outline"
+            className="ml-auto"
             size="lg"
-            onClick={handleBack}
-            disabled={isDeploying}
+            onClick={() => {
+              if (activeStep < 3) {
+                handleNext();
+              } else {
+                handleComplete();
+              }
+            }}
+            disabled={!isStepValid(activeStep) || isDeploying}
           >
-            戻る
+            {activeStep === 3 ? (
+              <>
+                {isDeploying ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin mr-2" />
+                    <span className="hidden sm:inline">
+                      ダッシュボードへ移動中...
+                    </span>
+                    <span className="sm:hidden">移動中...</span>
+                  </>
+                ) : (
+                  <>
+                    <Rocket className="h-5 w-5 mr-2" />
+                    <span>完了</span>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                次へ
+                <ArrowRight className="h-5 w-5 ml-2" />
+              </>
+            )}
           </Button>
-        )}
-        <Button
-          className="ml-auto"
-          size="lg"
-          onClick={() => {
-            if (activeStep < 3) {
-              handleNext();
-            } else {
-              handleComplete();
-            }
-          }}
-          disabled={!isStepValid(activeStep) || isDeploying}
-        >
-          {activeStep === 3 ? (
-            <>
-              {isDeploying ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                  <span className="hidden sm:inline">
-                    ダッシュボードへ移動中...
-                  </span>
-                  <span className="sm:hidden">移動中...</span>
-                </>
-              ) : (
-                <>
-                  <Rocket className="h-5 w-5 mr-2" />
-                  <span>完了</span>
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              次へ
-              <ArrowRight className="h-5 w-5 ml-2" />
-            </>
-          )}
-        </Button>
-      </div>
-    </Card>
+        </div>
+      </Card>
+      {isNavigating && <LoadingOverlay />}
+    </>
   );
 }
