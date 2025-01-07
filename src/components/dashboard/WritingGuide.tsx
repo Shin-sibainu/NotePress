@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { FileText, Tag, Image, Globe, Link, Play } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 
 const guideItems = [
   {
