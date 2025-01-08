@@ -12,10 +12,14 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   clerkId   String   @unique
+  name      String?
+  email     String?
   blogs     Blog[]
   purchases Purchase[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([email])
 }
 
 // ブログモデル

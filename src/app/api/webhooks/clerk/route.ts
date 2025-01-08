@@ -47,18 +47,29 @@ export async function POST(req: Request) {
     // Handle the webhook event
     const eventType = evt.type;
 
-    if (eventType === "user.created") {
+    if (eventType === "user.created" || eventType === "user.updated") {
       try {
-        const { id } = evt.data;
-        await prisma.user.create({
-          data: {
+        const { id, email_addresses, first_name, last_name } = evt.data;
+        const primaryEmail = email_addresses?.[0]?.email_address;
+        const fullName = [first_name, last_name].filter(Boolean).join(" ");
+
+        await prisma.user.upsert({
+          where: { clerkId: id },
+          update: {
+            name: fullName || undefined,
+            email: primaryEmail || undefined,
+          },
+          create: {
             clerkId: id,
+            name: fullName || undefined,
+            email: primaryEmail || undefined,
           },
         });
-        return new Response("User created successfully", { status: 201 });
+
+        return new Response("User data synced successfully", { status: 200 });
       } catch (error) {
         console.error("Database error:", error);
-        return new Response("Error creating user", { status: 500 });
+        return new Response("Error syncing user data", { status: 500 });
       }
     }
 

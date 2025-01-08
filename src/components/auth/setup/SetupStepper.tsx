@@ -1,7 +1,6 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ArrowRight, Loader2, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -48,7 +47,9 @@ export function SetupStepper() {
     setActiveStep((prevStep) => prevStep - 1);
   };
 
-  const handleComplete = async () => {
+  const handleComplete = useCallback(async () => {
+    if (isDeploying || isNavigating) return;
+
     if (
       !setupData.basicInfo?.url ||
       !setupData.notionConnection?.pageId ||
@@ -66,7 +67,7 @@ export function SetupStepper() {
       setIsDeploying(true);
       setIsNavigating(true);
 
-      // ブログ作成のみを行い、デプロイは一度だけ実行
+      // ブログ作成
       const blogResponse = await fetch("/api/blog/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -77,15 +78,25 @@ export function SetupStepper() {
         }),
       });
 
+      const blogData = await blogResponse.json();
+
       if (!blogResponse.ok) {
-        throw new Error("ブログの作成に失敗しました");
+        if (blogResponse.status === 409) {
+          setIsNavigating(false);
+          setIsDeploying(false);
+          toast({
+            variant: "destructive",
+            title: "エラー",
+            description:
+              "ドメインが既に利用されています。ブログURL設定を変更してください。",
+          });
+          setActiveStep(1);
+          return;
+        }
+        throw new Error(blogData.error || "ブログの作成に失敗しました");
       }
 
-      // デプロイ情報をローカルストレージに保存
-      localStorage.setItem("blogUrl", setupData.basicInfo.url);
-      localStorage.setItem("setupData", JSON.stringify(setupData));
-
-      // デプロイは一度だけ実行
+      // デプロイ実行
       const deployResponse = await fetch("/api/deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,17 +107,46 @@ export function SetupStepper() {
         }),
       });
 
+      const deployData = await deployResponse.json();
+
       if (!deployResponse.ok) {
-        throw new Error("デプロイに失敗しました");
+        // ドメイン重複エラーの場合
+        if (deployResponse.status === 409) {
+          toast({
+            variant: "destructive",
+            title: "エラー",
+            description: deployData.error || "このURLは既に使用されています",
+          });
+          setIsNavigating(false);
+          setIsDeploying(false);
+          return;
+        }
+        throw new Error(deployData.error || "デプロイに失敗しました");
       }
 
-      const deployData = await deployResponse.json();
+      // デプロイIDを保存
       localStorage.setItem("deploymentId", deployData.deploymentId);
+      localStorage.setItem("blogUrl", setupData.basicInfo.url);
 
       router.push("/dashboard?deploying=true");
     } catch (error) {
       setIsNavigating(false);
       setIsDeploying(false);
+
+      if (
+        error instanceof Error &&
+        error.message.includes("Repository already exists")
+      ) {
+        toast({
+          variant: "destructive",
+          title: "エラー",
+          description:
+            "ドメインが既に利用されています。ブログURL設定を変更してください。",
+        });
+        setActiveStep(1);
+        return;
+      }
+
       toast({
         variant: "destructive",
         title: "エラー",
@@ -114,14 +154,21 @@ export function SetupStepper() {
           error instanceof Error ? error.message : "デプロイに失敗しました",
       });
     }
-  };
+  }, [setupData, isDeploying, isNavigating, toast, router]);
 
-  const updateSetupData = (key: string, value: any) => {
+  const handleUpdateData = useCallback((data: Partial<SetupData>) => {
     setSetupData((prev) => ({
       ...prev,
-      [key]: value,
+      ...data,
     }));
-  };
+  }, []);
+
+  const handleBasicInfoUpdate = useCallback(
+    (data: { url: string }) => {
+      handleUpdateData({ basicInfo: data });
+    },
+    [handleUpdateData]
+  );
 
   const isStepValid = (step: number): boolean => {
     switch (step) {
@@ -160,14 +207,14 @@ export function SetupStepper() {
             {activeStep === 0 && !isSignedIn && <AuthStep />}
             {activeStep === 1 && (
               <BasicInfoStep
-                onUpdateData={(data) => updateSetupData("basicInfo", data)}
+                onUpdateData={handleBasicInfoUpdate}
                 initialValue={setupData.basicInfo?.url || ""}
               />
             )}
             {activeStep === 2 && (
               <ThemeSelectionStep
                 onUpdateData={(theme) =>
-                  updateSetupData("selectedTheme", theme)
+                  handleUpdateData({ selectedTheme: theme })
                 }
                 initialValue={setupData.selectedTheme || null}
               />
@@ -175,7 +222,7 @@ export function SetupStepper() {
             {activeStep === 3 && (
               <NotionSetupStep
                 onUpdateData={(data) =>
-                  updateSetupData("notionConnection", data)
+                  handleUpdateData({ notionConnection: data })
                 }
                 initialValue={setupData.notionConnection?.pageId || ""}
               />
