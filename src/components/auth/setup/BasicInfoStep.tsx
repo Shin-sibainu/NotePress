@@ -54,7 +54,7 @@ export function BasicInfoStep({
   };
 
   useEffect(() => {
-    if (url && touched) {
+    if (url) {
       const isValid = validateUrl(url);
       if (isValid) {
         onUpdateData({ url });
@@ -62,7 +62,7 @@ export function BasicInfoStep({
         onUpdateData({ url: "" });
       }
     }
-  }, [url, onUpdateData, touched]);
+  }, [url, onUpdateData]);
 
   return (
     <motion.div

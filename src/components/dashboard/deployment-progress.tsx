@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, CheckCircle, XCircle, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -36,95 +36,121 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
   const [blogUrl, setBlogUrl] = useState<string | null>(null);
   const [buildStartTime] = useState(Date.now());
 
-  const buildSteps: BuildStep[] = [
-    { label: "依存関係のインストール", progress: 10 },
-    { label: "ソースコードのコンパイル", progress: 25 },
-    { label: "静的ファイルの生成", progress: 40 },
-    { label: "最適化", progress: 55 },
-    { label: "デプロイの準備", progress: 70 },
-    { label: "サイトの公開", progress: 85 },
-    { label: "DNS設定の反映", progress: 100 },
-  ];
+  const buildSteps = useMemo<BuildStep[]>(
+    () => [
+      { label: "依存関係のインストール", progress: 10 },
+      { label: "ソースコードのコンパイル", progress: 25 },
+      { label: "静的ファイルの生成", progress: 40 },
+      { label: "最適化", progress: 55 },
+      { label: "デプロイの準備", progress: 70 },
+      { label: "サイトの公開", progress: 85 },
+      { label: "DNS設定の反映", progress: 100 },
+    ],
+    []
+  );
 
   const [currentBuildStep, setCurrentBuildStep] = useState(0);
 
   useEffect(() => {
-    // ローカルストレージからデプロイ状態を確認
-    const deploymentStatus = localStorage.getItem(`deployment_${deploymentId}`);
-    if (deploymentStatus === "completed") {
-      const storedBlogUrl = localStorage.getItem("blogUrl");
-      const fullUrl = `https://${storedBlogUrl}.notepress.xyz`;
-      setBlogUrl(fullUrl);
-      setIsCompleted(true);
-      setStatus({
-        phase: "READY",
-        message: "デプロイ完了",
-        progress: 100,
-      });
-      return;
-    }
+    let timeoutId: NodeJS.Timeout;
+    let isSubscribed = true;
 
     const checkStatus = async () => {
+      if (!isSubscribed) return;
+
       try {
+        console.log("Checking deployment status...");
         const response = await fetch(
           `/api/deploy/status?deploymentId=${deploymentId}`
         );
         const data = await response.json();
+        console.log("Deployment status:", data);
+
+        if (!isSubscribed) return;
 
         let message = "デプロイの準備中...";
         let progress = 0;
 
         switch (data.phase) {
           case "QUEUED":
-            message = "デプロイの準備中...";
-            progress = 10;
+            message = buildSteps[0].label;
+            progress = buildSteps[0].progress;
+            setCurrentBuildStep(0);
             break;
           case "BUILDING":
             const elapsedTime = (Date.now() - buildStartTime) / 1000;
-            const buildProgress = Math.min(
-              40 + Math.floor(elapsedTime / 2) * 3,
-              85
+            const stepIndex = Math.min(
+              Math.floor((elapsedTime / 30) * (buildSteps.length - 2)) + 1,
+              buildSteps.length - 2
             );
-            message = "ブログをビルド中...";
-            progress = buildProgress;
+            message = buildSteps[stepIndex].label;
+            progress = buildSteps[stepIndex].progress;
+            setCurrentBuildStep(stepIndex);
             break;
           case "DEPLOYING":
-            message = "ブログを公開中...";
-            progress = 90;
+            message = buildSteps[buildSteps.length - 2].label;
+            progress = buildSteps[buildSteps.length - 2].progress;
+            setCurrentBuildStep(buildSteps.length - 2);
             break;
           case "READY":
             const storedBlogUrl = localStorage.getItem("blogUrl");
             const fullUrl = `https://${storedBlogUrl}.notepress.xyz`;
             setBlogUrl(fullUrl);
             setIsCompleted(true);
-            message = "デプロイ完了";
+            message = buildSteps[buildSteps.length - 1].label;
             progress = 100;
-            // デプロイ完了状態を保存
+            setCurrentBuildStep(buildSteps.length - 1);
             localStorage.setItem(`deployment_${deploymentId}`, "completed");
             break;
           case "ERROR":
-            message = "エラーが発生しました";
-            break;
+            message =
+              data.status === "ERROR" && data.buildProgress < 50
+                ? "依存関係のインストール中にエラーが発生しました。再度デプロイを試みてください。"
+                : "デプロイに失敗しまた。もう一度お試しください。";
+
+            setStatus((prevStatus) => ({
+              phase: "ERROR",
+              message,
+              progress: data.buildProgress || prevStatus.progress,
+            }));
+
+            return;
         }
 
-        setStatus({
+        setStatus((prevStatus) => ({
           phase: data.phase,
           message,
-          progress: Math.max(status.progress, progress),
-        });
+          progress: Math.max(prevStatus.progress, progress),
+        }));
 
-        if (data.phase !== "READY" && data.phase !== "ERROR") {
-          const interval = data.phase === "BUILDING" ? 8000 : 5000;
-          setTimeout(checkStatus, interval);
+        if (data.phase !== "READY" && data.phase !== "ERROR" && isSubscribed) {
+          timeoutId = setTimeout(
+            checkStatus,
+            data.phase === "BUILDING" ? 8000 : 5000
+          );
         }
       } catch (error) {
         console.error("Failed to check deployment status:", error);
-        setTimeout(checkStatus, 10000);
+        if (isSubscribed) {
+          setStatus((prevStatus) => ({
+            phase: "ERROR",
+            message: "デプロイの状態確認に失敗しました",
+            progress: prevStatus.progress,
+          }));
+          timeoutId = setTimeout(checkStatus, 10000);
+        }
       }
     };
 
     checkStatus();
-  }, [deploymentId, status.progress, buildStartTime]);
+
+    return () => {
+      isSubscribed = false;
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
+  }, [deploymentId, buildStartTime, buildSteps]);
 
   useEffect(() => {
     if (status.phase === "BUILDING") {

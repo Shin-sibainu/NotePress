@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { BlogStatus } from "@/components/dashboard/BlogStatus";
+import BlogStatus from "@/components/dashboard/BlogStatus";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { WritingGuide } from "@/components/dashboard/WritingGuide";
 import { RecentPosts } from "@/components/dashboard/RecentPosts";

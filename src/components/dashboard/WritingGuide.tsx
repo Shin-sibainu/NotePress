@@ -68,7 +68,7 @@ export function WritingGuide() {
           </div>
           <div className="relative aspect-video rounded-lg overflow-hidden bg-accent/20">
             <iframe
-              src="https://player.vimeo.com/video/948201541?h=c8c3b6c2e1&color=0070f3&title=0&byline=0&portrait=0"
+              src="https://player.vimeo.com/video/1044898531?h=c8c3b6c2e1&color=0070f3&title=0&byline=0&portrait=0"
               allow="autoplay; fullscreen; picture-in-picture"
               style={{
                 position: "absolute",

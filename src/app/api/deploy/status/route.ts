@@ -31,21 +31,6 @@ export async function GET(request: Request) {
     );
     const projectData = await projectResponse.json();
 
-    // let finalUrl;
-    // if (projectData.latestDeployments?.length > 0) {
-    //   // プロジェクトの最新の本番デプロイメントURLを使用
-    //   const productionDeployment = projectData.latestDeployments.find(
-    //     (d: any) => d.target === "production"
-    //   );
-    //   if (productionDeployment) {
-    //     finalUrl = `${projectData.name}.vercel.app`;
-    //   } else {
-    //     finalUrl = statusData.url;
-    //   }
-    // } else {
-    //   finalUrl = statusData.url;
-    // }
-
     // 最終的なプロジェクトURL
     const finalUrl = `${projectData.name}.notepress.xyz`;
 
@@ -75,7 +60,7 @@ export async function GET(request: Request) {
     })();
 
     // 経過時間に基づく追加進捗を計算
-    const timeProgress = (elapsedTime / expectedBuildTime) * 30; // 各状態で最大30%まで進む
+    const timeProgress = (elapsedTime / expectedBuildTime) * 30;
     buildProgress = Math.min(
       baseProgress + timeProgress,
       statusData.readyState === "READY" ? 100 : baseProgress + 30
@@ -83,6 +68,17 @@ export async function GET(request: Request) {
 
     // 最小進捗を保証（後退を防ぐ）
     buildProgress = Math.max(buildProgress, baseProgress);
+
+    if (statusData.readyState === "ERROR") {
+      return NextResponse.json({
+        status: "ERROR",
+        url: finalUrl,
+        phase: "ERROR",
+        buildProgress: baseProgress,
+        elapsedTime,
+        errorDetail: statusData.errorCode || statusData.errorMessage,
+      });
+    }
 
     return NextResponse.json({
       status: statusData.readyState,
