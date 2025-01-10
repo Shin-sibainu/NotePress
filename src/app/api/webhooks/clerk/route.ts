@@ -2,6 +2,7 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import { WebhookEvent } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -77,37 +78,45 @@ export async function POST(req: Request) {
     if (eventType === "user.deleted") {
       try {
         const { id } = evt.data;
-        // まずユーザーが存在するか確認
-        const user = await prisma.user.findUnique({
-          where: {
-            clerkId: id,
-          },
-        });
 
-        // ユーザーが存在する場合のみ削除処理を実行
-        if (user) {
-          // ユーザーに関連するブログを削除
-          await prisma.blog.deleteMany({
+        // トランザクションを使用して、関連するレコードを順番に削除
+        await prisma.$transaction(async (tx) => {
+          // まず購入履歴を削除
+          await tx.purchase.deleteMany({
             where: {
               user: {
                 clerkId: id,
               },
             },
           });
-          // ユーザーを削除
-          await prisma.user.delete({
+
+          // 次にブログを削除
+          await tx.blog.deleteMany({
+            where: {
+              user: {
+                clerkId: id,
+              },
+            },
+          });
+
+          // 最後にユーザーを削除
+          await tx.user.delete({
             where: {
               clerkId: id,
             },
           });
-          return new Response("User deleted successfully", { status: 200 });
-        }
+        });
 
-        // ユーザーが存在しない場合は正常終了として扱う
-        return new Response("User not found", { status: 200 });
+        return NextResponse.json(
+          { message: "User deleted successfully" },
+          { status: 200 }
+        );
       } catch (error) {
         console.error("Database error:", error);
-        return new Response("Error deleting user", { status: 500 });
+        return NextResponse.json(
+          { error: "Error deleting user" },
+          { status: 500 }
+        );
       }
     }
 

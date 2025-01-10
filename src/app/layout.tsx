@@ -27,7 +27,7 @@ export default function RootLayout({
   return (
     <ClerkProvider
       signUpForceRedirectUrl="/setup" // 新規登録後のリダイレクト先
-      signInForceRedirectUrl={"/"}
+      signInForceRedirectUrl="/setup"
     >
       <html lang="ja" className={`${notoSansJP.className}`}>
         <body className="font-noto-sans">

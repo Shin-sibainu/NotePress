@@ -59,7 +59,6 @@ export async function POST(request: Request) {
     if (!githubResponse.ok) {
       const error = await githubResponse.json();
 
-      // リポジトリ名の重複エラーをチェック
       if (
         error.message ===
           "Could not clone: Name already exists on this account" ||
@@ -76,7 +75,6 @@ export async function POST(request: Request) {
         );
       }
 
-      // その他のエラー
       return NextResponse.json(
         {
           error:
@@ -87,8 +85,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // const repoData = await githubResponse.json();
-
+    // 2. Vercelプロジェクトを作成
     // 2. Vercelプロジェクトを作成
     const vercelResponse = await fetch("https://api.vercel.com/v9/projects", {
       method: "POST",
@@ -107,22 +104,40 @@ export async function POST(request: Request) {
       }),
     });
 
-    const responseData = await vercelResponse.json();
+    const project = await vercelResponse.json();
+    console.log("Project created:", project);
 
     if (!vercelResponse.ok) {
       console.error("Vercel Project Creation Error:", {
         status: vercelResponse.status,
         statusText: vercelResponse.statusText,
-        error: responseData,
+        error: project,
       });
       throw new Error(
         `Vercelプロジェクトの作成に失敗しました (${
           vercelResponse.status
-        }): ${JSON.stringify(responseData)}`
+        }): ${JSON.stringify(project)}`
       );
     }
 
-    const project = responseData;
+    // 重要: プロジェクト作成後すぐに設定更新を試みる
+    console.log("Attempting to update auto-deploy settings...");
+    const settingsUpdateResponse = await fetch(
+      `https://api.vercel.com/v9/projects/${project.id}/settings`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${VERCEL_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gitAutoDeploy: false,
+        }),
+      }
+    );
+
+    const settingsResult = await settingsUpdateResponse.json();
+    console.log("Settings update result:", settingsResult);
 
     // 3. 環境変数を設定
     const envVariables = [
@@ -155,7 +170,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3.5 カスタムドメインを設定（必要）
+    // カスタムドメインを設定
     await fetch(`https://api.vercel.com/v9/projects/${project.id}/domains`, {
       method: "POST",
       headers: {
@@ -167,7 +182,7 @@ export async function POST(request: Request) {
       }),
     });
 
-    // 4. デプロイメントをトリガー
+    // 明示的なデプロイメントをトリガー
     const deploymentResponse = await fetch(
       "https://api.vercel.com/v13/deployments",
       {
@@ -191,6 +206,7 @@ export async function POST(request: Request) {
     );
 
     const deploymentData = await deploymentResponse.json();
+    console.log("Deployment triggered:", deploymentData);
 
     if (!deploymentResponse.ok) {
       throw new Error(
@@ -198,7 +214,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Vercelが生成した実際のURLを使用
     const deploymentUrl = deploymentData.url;
 
     return NextResponse.json({
