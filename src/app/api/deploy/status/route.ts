@@ -20,9 +20,48 @@ export async function GET(request: Request) {
         headers: { Authorization: `Bearer ${VERCEL_TOKEN}` },
       }
     );
-    const statusData = await statusResponse.json();
 
-    // プロジェクト情報を取得
+    const statusData = await statusResponse.json();
+    const elapsedTime = Date.now() - new Date(statusData.created).getTime();
+
+    // 状態に基づいて進捗を計算
+    let buildProgress = 0;
+    const state = statusData.readyState;
+
+    switch (state) {
+      case "QUEUED":
+        buildProgress = Math.min(
+          30,
+          10 + Math.floor((elapsedTime / 10000) * 20)
+        ); // 10秒で30%まで
+        break;
+      case "BUILDING":
+        // より速く進捗を進める
+        buildProgress = Math.min(
+          80,
+          30 + Math.floor((elapsedTime / 20000) * 50) // 20秒で80%まで
+        );
+        break;
+      case "DEPLOYING":
+        // デプロイ中は80-95%
+        buildProgress = Math.min(
+          95,
+          80 + Math.floor((elapsedTime / 10000) * 15) // 10秒で95%まで
+        );
+        break;
+      case "READY":
+        buildProgress = 100;
+        break;
+      case "ERROR":
+        // エラー時は現在の進捗を維持
+        buildProgress = Math.max(30, Math.floor((elapsedTime / 20000) * 50));
+        break;
+      default:
+        // 不明な状態の場合は経過時間に基づいて進捗を計算
+        buildProgress = Math.min(95, Math.floor((elapsedTime / 30000) * 95));
+    }
+
+    // プロジェクト情報を取得してURLを構築
     const projectResponse = await fetch(
       `https://api.vercel.com/v13/projects/${statusData.projectId}`,
       {
@@ -30,55 +69,7 @@ export async function GET(request: Request) {
       }
     );
     const projectData = await projectResponse.json();
-
-    // 最終的なプロジェクトURL
     const finalUrl = `${projectData.name}.notepress.xyz`;
-
-    // ビルドの進行状況を計算
-    let buildProgress = 0;
-    const startTime = statusData.buildingAt
-      ? new Date(statusData.buildingAt).getTime()
-      : Date.now();
-    const currentTime = Date.now();
-    const elapsedTime = currentTime - startTime;
-    const expectedBuildTime = 60000; // 予想ビルド時間: 60秒
-
-    // 基本進捗を計算
-    const baseProgress = (() => {
-      switch (statusData.readyState) {
-        case "QUEUED":
-          return 10;
-        case "INITIALIZING":
-          return 30;
-        case "BUILDING":
-          return 50;
-        case "READY":
-          return 100;
-        default:
-          return 0;
-      }
-    })();
-
-    // 経過時間に基づく追加進捗を計算
-    const timeProgress = (elapsedTime / expectedBuildTime) * 30;
-    buildProgress = Math.min(
-      baseProgress + timeProgress,
-      statusData.readyState === "READY" ? 100 : baseProgress + 30
-    );
-
-    // 最小進捗を保証（後退を防ぐ）
-    buildProgress = Math.max(buildProgress, baseProgress);
-
-    if (statusData.readyState === "ERROR") {
-      return NextResponse.json({
-        status: "ERROR",
-        url: finalUrl,
-        phase: "ERROR",
-        buildProgress: baseProgress,
-        elapsedTime,
-        errorDetail: statusData.errorCode || statusData.errorMessage,
-      });
-    }
 
     return NextResponse.json({
       status: statusData.readyState,
