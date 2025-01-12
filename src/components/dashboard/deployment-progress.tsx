@@ -38,13 +38,13 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
 
   const buildSteps = useMemo<BuildStep[]>(
     () => [
-      { label: "依存関係のインストール", progress: 10 },
-      { label: "ソースコードのコンパイル", progress: 25 },
-      { label: "静的ファイルの生成", progress: 40 },
-      { label: "最適化", progress: 55 },
-      { label: "デプロイの準備", progress: 70 },
-      { label: "サイトの公開", progress: 85 },
-      { label: "DNS設定の反映", progress: 100 },
+      { label: "依存関係のインストール中...", progress: 10 },
+      { label: "ソースコードのコンパイル中...", progress: 25 },
+      { label: "静的ファイルの生成中...", progress: 40 },
+      { label: "最適化中...", progress: 55 },
+      { label: "デプロイの準備中...", progress: 70 },
+      { label: "サイトを公開中...", progress: 85 },
+      { label: "完了", progress: 100 },
     ],
     []
   );
@@ -76,10 +76,10 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
             if (queuedTime > 30) {
               // 30秒以上キューイング中の場合
               message =
-                "他のユーザーのブログ構築を待機中...(しばらくお待ちください)";
+                "他のユーザーのブログ構築を待機中...(2~3分かかる可能性があります)";
             } else {
               message =
-                "他のユーザーのブログ構築を待機中...(しばらくお待ちください)";
+                "他のユーザーのブログ構築を待機中...(2~3分かかる可能性があります)";
             }
             progress = 10;
             setCurrentBuildStep(0);
@@ -87,12 +87,12 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
           case "BUILDING":
             const elapsedTime = (Date.now() - buildStartTime) / 1000;
             const buildProgress = Math.min(
-              80,
-              10 + Math.floor((elapsedTime / 60) * 35)
+              99,
+              10 + Math.floor((elapsedTime / 50) * 89)
             );
             const stepIndex = Math.min(
-              Math.floor((buildProgress / 80) * 3) + 1,
-              3
+              Math.floor((buildProgress / 99) * (buildSteps.length - 2)) + 1,
+              buildSteps.length - 2
             );
             message = buildSteps[stepIndex].label;
             progress = buildProgress;
@@ -100,7 +100,7 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
             break;
           case "DEPLOYING":
             message = buildSteps[buildSteps.length - 2].label;
-            progress = 85;
+            progress = 99.5;
             setCurrentBuildStep(buildSteps.length - 2);
             break;
           case "READY":
@@ -137,7 +137,7 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
         if (data.phase !== "READY" && data.phase !== "ERROR" && isSubscribed) {
           timeoutId = setTimeout(
             checkStatus,
-            data.phase === "BUILDING" ? 10000 : 5000
+            data.phase === "BUILDING" ? 5000 : 3000
           );
         }
       } catch (error) {
