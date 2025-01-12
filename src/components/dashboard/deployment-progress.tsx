@@ -54,17 +54,16 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     let isSubscribed = true;
+    const queueStartTime = Date.now();
 
     const checkStatus = async () => {
       if (!isSubscribed) return;
 
       try {
-        console.log("Checking deployment status...");
         const response = await fetch(
           `/api/deploy/status?deploymentId=${deploymentId}`
         );
         const data = await response.json();
-        console.log("Deployment status:", data);
 
         if (!isSubscribed) return;
 
@@ -73,23 +72,35 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
 
         switch (data.phase) {
           case "QUEUED":
-            message = buildSteps[0].label;
-            progress = buildSteps[0].progress;
+            const queuedTime = (Date.now() - queueStartTime) / 1000;
+            if (queuedTime > 30) {
+              // 30秒以上キューイング中の場合
+              message =
+                "他のユーザーのブログ構築を待機中...(しばらくお待ちください)";
+            } else {
+              message =
+                "他のユーザーのブログ構築を待機中...(しばらくお待ちください)";
+            }
+            progress = 10;
             setCurrentBuildStep(0);
             break;
           case "BUILDING":
             const elapsedTime = (Date.now() - buildStartTime) / 1000;
+            const buildProgress = Math.min(
+              80,
+              10 + Math.floor((elapsedTime / 60) * 35)
+            );
             const stepIndex = Math.min(
-              Math.floor((elapsedTime / 30) * (buildSteps.length - 2)) + 1,
-              buildSteps.length - 2
+              Math.floor((buildProgress / 80) * 3) + 1,
+              3
             );
             message = buildSteps[stepIndex].label;
-            progress = buildSteps[stepIndex].progress;
+            progress = buildProgress;
             setCurrentBuildStep(stepIndex);
             break;
           case "DEPLOYING":
             message = buildSteps[buildSteps.length - 2].label;
-            progress = buildSteps[buildSteps.length - 2].progress;
+            progress = 85;
             setCurrentBuildStep(buildSteps.length - 2);
             break;
           case "READY":
@@ -126,7 +137,7 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
         if (data.phase !== "READY" && data.phase !== "ERROR" && isSubscribed) {
           timeoutId = setTimeout(
             checkStatus,
-            data.phase === "BUILDING" ? 8000 : 5000
+            data.phase === "BUILDING" ? 10000 : 5000
           );
         }
       } catch (error) {
@@ -230,7 +241,12 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
       </div>
 
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        {status.phase === "BUILDING" && (
+        {status.phase === "QUEUED" ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>{status.message}</span>
+          </div>
+        ) : status.phase === "BUILDING" ? (
           <div className="space-y-2 w-full">
             {buildSteps.map((step, index) => (
               <div
@@ -252,12 +268,8 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
               ※ ビルドには数分かかる場合があります
             </p>
           </div>
-        )}
-        {status.phase !== "BUILDING" && (
+        ) : (
           <>
-            {status.phase === "QUEUED" && (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            )}
             {status.phase === "DEPLOYING" && (
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
             )}
