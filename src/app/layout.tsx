@@ -4,6 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 
 import { ClerkProvider } from "@clerk/nextjs";
 
+import { GoogleAnalytics } from "@next/third-parties/google";
+
 const notoSansJP = Noto_Sans_JP({
   subsets: ["latin"],
   variable: "--font-noto-sans-jp",
@@ -34,6 +36,7 @@ export default function RootLayout({
           {children}
           <Toaster />
         </body>
+        <GoogleAnalytics gaId="G-E8N50FC5WW" />
       </html>
     </ClerkProvider>
   );
