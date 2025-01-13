@@ -73,7 +73,7 @@ export function BasicInfoStep({
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">URLの設定</h1>
         <p className="text-lg text-muted-foreground">
-          ブログのURLを設定してす。あとから変更することもできます。
+          ブログのURLを設定しましょう。後から変更することもできます。
         </p>
       </div>
       <div className="space-y-6">
@@ -107,10 +107,6 @@ export function BasicInfoStep({
             </p>
             <p className="text-sm text-muted-foreground">
               例: my-blog, tech-notes, portfolio
-            </p>
-            <p className="text-sm text-muted-foreground">
-              ※
-              指定したURLが既に使用されている場合、自動的に別のURLが割り当てられます
             </p>
           </div>
           {error && touched && (

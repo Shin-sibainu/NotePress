@@ -72,7 +72,7 @@ export default function NotionSetupStep({
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Notionの連携</h1>
         <p className="text-lg text-muted-foreground">
-          NotionデータベースのURLを丸ごと貼り付けてください
+          NotionデータベースのURLを丸ごと貼り付けます。
         </p>
       </div>
       <div className="space-y-6">
