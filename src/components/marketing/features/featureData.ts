@@ -1,4 +1,4 @@
-import { Sparkles, Zap, Lock, Palette, PenLine } from "lucide-react";
+import { Sparkles, Zap, Lock, PenLine } from "lucide-react";
 
 export const features = [
   {
