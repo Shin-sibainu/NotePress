@@ -8,6 +8,9 @@ import { Templates } from "@/components/marketing/templates";
 import { CTA } from "@/components/marketing/cta";
 import { Footer } from "@/components/layouts/footer";
 import { FAQ } from "@/components/marketing/faq";
+import { Problems } from "@/components/marketing/problems";
+// import { HowItWorks } from "@/components/marketing/how-it-works";
+// import { Pricing } from "@/components/marketing/pricing";
 
 export default function Home() {
   return (
@@ -15,10 +18,13 @@ export default function Home() {
       <GradientBackground />
 
       <Hero />
+      <Problems />
       <Features />
       <Performance />
+      {/* <HowItWorks /> */}
+      {/* <Pricing /> */}
       <Templates />
-      <FAQ/>
+      <FAQ />
       <CTA />
 
       <Footer />
