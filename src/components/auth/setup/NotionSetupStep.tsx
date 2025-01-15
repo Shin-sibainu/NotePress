@@ -72,14 +72,63 @@ export default function NotionSetupStep({
       <div className="space-y-2">
         <h1 className="text-3xl font-bold">Notionの連携</h1>
         <p className="text-lg text-muted-foreground">
-          NotionデータベースのURLを丸ごと貼り付けます。
+          テンプレートをコピーして、そのURLを貼り付けてください。
         </p>
       </div>
+
       <div className="space-y-6">
+        <div className="flex flex-col gap-2">
+          <Button
+            variant="outline"
+            size="lg"
+            className="w-full justify-center relative"
+            asChild
+          >
+            <Link
+              href="https://www.notion.so/Notion-Blog-Sample-14e1dcf229c28018bcbbe57ab6e92e8c?pvs=4"
+              target="_blank"
+            >
+              <ExternalLink className="h-4 w-4" />
+              まずはこちらからテンプレートをコピー
+            </Link>
+          </Button>
+          <Link
+            href="https://shin-blog.notepress.xyz/post/how-to-copy-template"
+            target="_blank"
+            className="text-xs text-muted-foreground hover:text-primary transition-colors text-center"
+          >
+            <span className="flex items-center justify-center gap-1">
+              <HelpCircle className="h-3 w-3" />
+              テンプレートのコピー方法が分からない方はこちら
+            </span>
+          </Link>
+        </div>
+
+        <div className="rounded-lg border border-amber-200 bg-amber-50/10 p-4 space-y-3 backdrop-blur-sm">
+          <h4 className="font-medium flex items-center gap-2 text-foreground">
+            <span className="text-amber-500">⚠️</span>
+            重要：テンプレートの利用について
+          </h4>
+          <div className="space-y-2 text-sm text-muted-foreground">
+            <p>
+              NotePressでは、最適な表示と機能のために専用のテンプレートを用意しています。
+              以下の手順で設定してください：
+            </p>
+            <ol className="list-decimal list-inside space-y-1 ml-1">
+              <li>上記のボタンからテンプレートをご自身のNotionへコピー</li>
+              <li>コピーしたテンプレートを「共有」から「Web公開」を選択</li>
+              <li>データベースのURLをコピーして下記にコピペして完了！</li>
+            </ol>
+            <p className="text-xs mt-2 text-amber-500/80 font-medium">
+              ※ 独自のデータベースはサポートしていません
+            </p>
+          </div>
+        </div>
+
         <div className="space-y-4">
           <div>
             <label className="text-base font-medium mb-2 block">
-              NotionデータベースのURL
+              コピーして作ったNotionデータベースのURL
             </label>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               <Input
@@ -96,7 +145,7 @@ export default function NotionSetupStep({
               <Button
                 variant="outline"
                 size="icon"
-                className="h-12 w-12 shrink-0 relative group animate-pulse hover:animate-none"
+                className="h-12 w-12 shrink-0 relative group"
                 asChild
               >
                 <Link
@@ -105,51 +154,16 @@ export default function NotionSetupStep({
                 >
                   <HelpCircle className="h-5 w-5 text-primary" />
                   <span className="absolute -top-8 right-0 w-max opacity-0 group-hover:opacity-100 transition-opacity bg-primary text-primary-foreground text-xs px-2 py-1 rounded">
-                    URLの取得方法を確認
+                    URLの確認方法はこちら
                   </span>
                 </Link>
               </Button>
             </div>
             {showError && (
               <p className="text-sm text-destructive mt-2">
-                有効なNotionデータベースのURLを入力してください
+                NotePressのテンプレートをご利用ください。独自のデータベースはサポートしていません。
               </p>
             )}
-          </div>
-        </div>
-        <div className="flex flex-col gap-2">
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full justify-center"
-            asChild
-          >
-            <Link
-              href="https://www.notion.so/Notion-Blog-Sample-14e1dcf229c28018bcbbe57ab6e92e8c?pvs=4"
-              target="_blank"
-            >
-              <ExternalLink className="h-4 w-4" />
-              こちらからNotionデータベースをコピー
-            </Link>
-          </Button>
-        </div>
-        <div className="rounded-lg border border-amber-200 bg-amber-50/10 p-4 space-y-3 backdrop-blur-sm">
-          <h4 className="font-medium flex items-center gap-2 text-foreground">
-            <span className="text-amber-500">⚠️</span>
-            重要：Notionの公開設定
-          </h4>
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p>
-              上記データベースをコピーした後、以下の手順で公開設定を行ってください：
-            </p>
-            <ol className="list-decimal list-inside space-y-1 ml-1">
-              <li>Notionデータベースの右上の「共有」をクリック</li>
-              <li>「Web公開」を選択</li>
-              <li>「公開」を選択</li>
-            </ol>
-            <p className="text-xs mt-2 text-amber-500/80 font-medium">
-              ※ この設定がないと、NotePressがデータベースにアクセスできません
-            </p>
           </div>
         </div>
       </div>
