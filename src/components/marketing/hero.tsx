@@ -2,6 +2,7 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Card } from "@/components/ui/card";
 
 export function Hero() {
   return (
@@ -44,6 +45,34 @@ export function Hero() {
             <Button asChild size="lg" variant="secondary">
               <Link href="/templates">テンプレートを見る</Link>
             </Button>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.6 }}
+            className="relative max-w-6xl mx-auto pt-4"
+          >
+            <div className="text-sm text-muted-foreground mb-2 text-center">
+              🔊 音声付きのデモ動画です
+            </div>
+            <Card className="overflow-hidden bg-card/50 backdrop-blur-sm border-2 border-primary/10">
+              <div style={{ padding: "56.25% 0 0 0", position: "relative" }}>
+                <iframe
+                  src="https://player.vimeo.com/video/1047033261?loop=1"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: "100%",
+                  }}
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            </Card>
+            <div className="absolute -z-10 inset-0 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 blur-3xl transform translate-y-32 opacity-25" />
           </motion.div>
         </div>
       </div>
