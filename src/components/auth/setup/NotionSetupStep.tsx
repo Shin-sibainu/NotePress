@@ -93,7 +93,7 @@ export default function NotionSetupStep({
             </Link>
           </Button>
           <Link
-            href="https://shin-blog.notepress.xyz/post/how-to-copy-template"
+            href="https://shin-blog.notepress.xyz/post/how-to-get-notion-page-id"
             target="_blank"
             className="text-xs text-muted-foreground hover:text-primary transition-colors text-center"
           >
