@@ -98,7 +98,7 @@ export function BasicInfoStep({
               />
             </div>
             <span className="text-lg text-muted-foreground">
-              .{process.env.NEXT_PUBLIC_BASE_URL}
+              .notepress.xyz
             </span>
           </div>
           <div className="mt-2 space-y-1">
