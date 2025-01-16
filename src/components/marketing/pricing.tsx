@@ -3,31 +3,32 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-const plans = [
+const templates = [
   {
-    name: "Free",
-    price: "¥0",
-    description: "個人ブログに最適",
+    name: "ベーシック",
+    price: "¥4,980",
+    description: "シンプルで使いやすいブログテンプレート",
     features: [
-      "無制限の記事投稿",
-      "基本的なテンプレート",
+      "レスポンシブデザイン",
+      "基本的なブログ機能",
       "Notionとの連携",
       "高速な表示速度",
-      "無料のホスティング",
+      "無料アップデート",
+      "永続ライセンス",
     ],
   },
   {
-    name: "Pro",
-    price: "¥1,980",
-    period: "/月",
-    description: "プロフェッショナルな機能が必要な方に",
+    name: "プロフェッショナル",
+    price: "¥9,980",
+    description: "高度なカスタマイズが可能なテンプレート",
     features: [
-      "Freeプランの全機能",
-      "カスタムドメイン",
-      "プレミアムテンプレート",
+      "ベーシックの全機能",
+      "カスタムデザインオプション",
       "アナリティクス機能",
+      "SEO最適化機能",
       "優先サポート",
-      "広告なし",
+      "コメント機能",
+      "永続ライセンス",
     ],
     popular: true,
   },
@@ -44,19 +45,19 @@ export function Pricing() {
           transition={{ duration: 0.8 }}
           className="text-center max-w-3xl mx-auto mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            シンプルな料金プラン
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            テンプレート料金
           </h2>
           <p className="text-xl text-muted-foreground">
-            必要な機能に応じて、最適なプランをお選びいただけます。
-            いつでもプランの変更が可能です。
+            一度購入すれば永続的にご利用いただけます。
+            アップデートも無料で提供します。
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan, index) => (
+          {templates.map((template, index) => (
             <motion.div
-              key={plan.name}
+              key={template.name}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -64,40 +65,38 @@ export function Pricing() {
             >
               <Card
                 className={`relative p-8 h-full ${
-                  plan.popular ? "border-primary" : ""
+                  template.popular ? "border-primary" : ""
                 }`}
               >
-                {plan.popular && (
+                {template.popular && (
                   <div className="absolute top-0 right-8 transform -translate-y-1/2">
                     <span className="bg-primary text-primary-foreground text-sm font-medium px-3 py-1 rounded-full">
-                      人気
+                      おすすめ
                     </span>
                   </div>
                 )}
 
                 <div>
-                  <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
+                  <h3 className="text-2xl font-bold mb-2">{template.name}</h3>
                   <div className="mb-4">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.period && (
-                      <span className="text-muted-foreground">
-                        {plan.period}
-                      </span>
-                    )}
+                    <span className="text-4xl font-bold">{template.price}</span>
+                    <span className="text-muted-foreground ml-1">
+                      （買い切り）
+                    </span>
                   </div>
                   <p className="text-muted-foreground mb-6">
-                    {plan.description}
+                    {template.description}
                   </p>
 
                   <Button
                     className="w-full mb-8"
-                    variant={plan.popular ? "default" : "outline"}
+                    variant={template.popular ? "default" : "outline"}
                   >
-                    選択する
+                    購入する
                   </Button>
 
                   <ul className="space-y-4">
-                    {plan.features.map((feature) => (
+                    {template.features.map((feature) => (
                       <li key={feature} className="flex items-center gap-3">
                         <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                           <Check className="h-3 w-3 text-primary" />

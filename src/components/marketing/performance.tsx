@@ -87,27 +87,19 @@ function MetricCard({
 
 export function Performance() {
   return (
-    <section className="py-24 relative overflow-hidden">
-      {/* Background Effects */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute top-1/4 -left-1/4 w-1/2 h-1/2 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 -right-1/4 w-1/2 h-1/2 bg-primary/5 rounded-full blur-3xl" />
-      </div>
-
+    <section className="py-24">
       <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-          className="text-center max-w-3xl mx-auto mb-16"
-        >
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-primary via-primary/80 to-primary">
-            高速なパフォーマンス
+        <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+        className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            高速なページ読み込み
           </h2>
-          <p className="text-xl text-muted-foreground leading-relaxed">
-            ブログの表示速度を最適化し、読者に最高のユーザー体験を提供。
-            ストレスフリーな閲覧環境を実現します。
+          <p className="text-lg text-muted-foreground">
+            静的サイト生成により、驚くほど高速なページ表示を実現
           </p>
         </motion.div>
 

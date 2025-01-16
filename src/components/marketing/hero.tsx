@@ -1,18 +1,23 @@
 import { ArrowRight } from "lucide-react";
-import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
+import { motion } from "framer-motion";
 
 export function Hero() {
   return (
-    <section className="pt-36 pb-24 px-4">
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="pt-28 pb-24 px-4"
+    >
       <div className="container mx-auto max-w-6xl">
         <div className="text-center space-y-8">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
             className="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight"
           >
             <span className="inline-block bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-600 dark:from-primary dark:via-purple-400 dark:to-pink-500">
@@ -24,7 +29,7 @@ export function Hero() {
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
             className="text-base md:text-xl text-muted-foreground max-w-2xl mx-auto"
           >
             コーディング不要で、たった数分でプロフェッショナルなブログを作成。
@@ -33,7 +38,7 @@ export function Hero() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
             className="flex flex-col sm:flex-row gap-4 justify-center"
           >
             <Button asChild size="lg" className="group">
@@ -48,9 +53,9 @@ export function Hero() {
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.6 }}
+            transition={{ duration: 0.5, delay: 0.5 }}
             className="relative max-w-6xl mx-auto pt-4"
           >
             <div className="text-sm text-muted-foreground mb-2 text-center">
@@ -76,6 +81,6 @@ export function Hero() {
           </motion.div>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

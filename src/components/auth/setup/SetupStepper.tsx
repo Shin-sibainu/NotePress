@@ -67,7 +67,23 @@ export function SetupStepper() {
       setIsDeploying(true);
       setIsNavigating(true);
 
-      // ブログ作成
+
+
+      // 1. Notionページの形式をバリデーション
+      const validateRes = await fetch("/api/notion/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageId: setupData.notionConnection.pageId }),
+      });
+
+      const validateData = await validateRes.json();
+      if (!validateData.valid) {
+        throw new Error(
+          validateData.error || "Notionページの形式が正しくありません"
+        );
+      }
+
+      // 2. ブログ作成処理
       const blogResponse = await fetch("/api/blog/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,7 +167,7 @@ export function SetupStepper() {
         variant: "destructive",
         title: "エラー",
         description:
-          error instanceof Error ? error.message : "デプロイに失敗しました",
+          error instanceof Error ? error.message : "セットアップに失敗しました",
       });
     }
   }, [setupData, isDeploying, isNavigating, toast, router]);

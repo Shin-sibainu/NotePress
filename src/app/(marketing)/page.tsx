@@ -9,7 +9,7 @@ import { CTA } from "@/components/marketing/cta";
 import { Footer } from "@/components/layouts/footer";
 import { FAQ } from "@/components/marketing/faq";
 import { Problems } from "@/components/marketing/problems";
-// import { HowItWorks } from "@/components/marketing/how-it-works";
+import { HowItWorks } from "@/components/marketing/how-it-works";
 // import { Pricing } from "@/components/marketing/pricing";
 
 export default function Home() {
@@ -21,9 +21,9 @@ export default function Home() {
       <Problems />
       <Features />
       <Performance />
-      {/* <HowItWorks /> */}
-      {/* <Pricing /> */}
+      <HowItWorks />
       <Templates />
+      {/* <Pricing /> */}
       <FAQ />
       <CTA />
 
