@@ -7,6 +7,9 @@ import { ExternalLink, HelpCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { templates } from "@/data/templates";
+import { useSetupContext } from "./SetupContext";
+import { loadStripe } from "@stripe/stripe-js";
 
 interface NotionSetupStepProps {
   onUpdateData: (data: any) => void;
@@ -17,6 +20,10 @@ export default function NotionSetupStep({
   onUpdateData,
   initialValue,
 }: NotionSetupStepProps) {
+  const { setupData } = useSetupContext();
+  const selectedTemplate = templates.find((t) => t.id === setupData.theme);
+  const requiresPayment = selectedTemplate && selectedTemplate.price > 0;
+
   const extractPageId = (url: string) => {
     // Notionの様々なURL形式に対応
     const patterns = [
@@ -62,6 +69,10 @@ export default function NotionSetupStep({
   };
 
   const showError = touched && !pageId;
+
+  const handleSubmit = () => {
+    onUpdateData({ pageId });
+  };
 
   return (
     <motion.div
@@ -166,6 +177,25 @@ export default function NotionSetupStep({
             )}
           </div>
         </div>
+
+        {requiresPayment && (
+          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+            <h4 className="font-medium flex items-center gap-2">
+              <span className="text-primary">💎</span>
+              プレミアムテーマの購入
+            </h4>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>
+                選択された「{selectedTemplate?.name}」テーマは ¥
+                {selectedTemplate?.price.toLocaleString()}（買い切り）です。
+              </p>
+              <p>
+                次のステップで決済ページに移動します。
+                決済完了後、自動的にブログが作成されます。
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   );

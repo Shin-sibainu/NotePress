@@ -13,6 +13,9 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { AuthStep } from "./AuthStep";
 import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { SetupProvider } from "./SetupContext";
+import { templates } from "@/data/templates";
+import { loadStripe } from "@stripe/stripe-js";
 
 interface SetupData {
   basicInfo: { url: string | null } | null;
@@ -63,11 +66,52 @@ export function SetupStepper() {
       return;
     }
 
+    // 選択されたテーマの情報を取得
+    const selectedTemplate = templates.find(
+      (t) => t.id === setupData.selectedTheme
+    );
+    const requiresPayment = selectedTemplate && selectedTemplate.price > 0;
+
+    if (requiresPayment) {
+      try {
+        // Stripe Checkout セッションを作成
+        const response = await fetch("/api/stripe/create-checkout", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            templateId: selectedTemplate.id,
+            price: selectedTemplate.price,
+            pageId: setupData.notionConnection.pageId,
+            blogUrl: setupData.basicInfo.url,
+          }),
+        });
+
+        const { sessionId } = await response.json();
+
+        // Stripeのチェックアウトページにリダイレクト
+        const stripe = await loadStripe(
+          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+        );
+        if (stripe) {
+          await stripe.redirectToCheckout({ sessionId });
+        }
+      } catch (error) {
+        console.error("Payment error:", error);
+        toast({
+          variant: "destructive",
+          title: "エラー",
+          description: "決済の処理中にエラーが発生しました",
+        });
+      }
+      return;
+    }
+
+    // 無料テーマの場合は通常のデプロイフロー
     try {
       setIsDeploying(true);
       setIsNavigating(true);
-
-
 
       // 1. Notionページの形式をバリデーション
       const validateRes = await fetch("/api/notion/validate", {
@@ -83,6 +127,8 @@ export function SetupStepper() {
         );
       }
 
+      // console.log(validateRes);
+
       // 2. ブログ作成処理
       const blogResponse = await fetch("/api/blog/create", {
         method: "POST",
@@ -95,6 +141,8 @@ export function SetupStepper() {
       });
 
       const blogData = await blogResponse.json();
+
+      // console.log(blogData)
 
       if (!blogResponse.ok) {
         if (blogResponse.status === 409) {
@@ -112,7 +160,7 @@ export function SetupStepper() {
         throw new Error(blogData.error || "ブログの作成に失敗しました");
       }
 
-      // デプロイ実行
+      // デプロイ実行 (ここでエラー中...)
       const deployResponse = await fetch("/api/deploy", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -208,8 +256,13 @@ export function SetupStepper() {
     }
   };
 
+  const selectedTemplate = templates.find(
+    (t) => t.id === setupData.selectedTheme
+  );
+  const requiresPayment = selectedTemplate && selectedTemplate.price > 0;
+
   return (
-    <>
+    <SetupProvider>
       <Card className="w-full max-w-3xl p-12 bg-card/50 backdrop-blur-sm">
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
@@ -279,6 +332,10 @@ export function SetupStepper() {
                     </span>
                     <span className="sm:hidden">移動中...</span>
                   </>
+                ) : requiresPayment ? (
+                  <>
+                    <span>決済へ進む</span>
+                  </>
                 ) : (
                   <>
                     <Rocket className="h-5 w-5 mr-2" />
@@ -296,6 +353,6 @@ export function SetupStepper() {
         </div>
       </Card>
       {isNavigating && <LoadingOverlay />}
-    </>
+    </SetupProvider>
   );
 }

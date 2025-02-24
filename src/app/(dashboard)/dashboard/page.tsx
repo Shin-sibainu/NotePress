@@ -1,8 +1,12 @@
-import { Suspense } from "react";
+"use client";
+
+import { Suspense, useEffect } from "react";
 import BlogStatus from "@/components/dashboard/BlogStatus";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { WritingGuide } from "@/components/dashboard/WritingGuide";
 import { RecentPosts } from "@/components/dashboard/RecentPosts";
+import { useSearchParams } from "next/navigation";
+import { toast } from "@/hooks/use-toast";
 
 // interface Project {
 //   id: string;
@@ -28,7 +32,33 @@ import { RecentPosts } from "@/components/dashboard/RecentPosts";
 //   };
 // }
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
+  const searchParams = useSearchParams();
+  const paymentCompleted = searchParams.get("payment_completed") === "true";
+
+  useEffect(() => {
+    if (paymentCompleted) {
+      const templateId = searchParams.get("template");
+      const pageId = searchParams.get("page_id");
+      const blogUrl = searchParams.get("blog_url");
+
+      toast({
+        title: "決済が完了しました",
+        description: "ブログの構築を開始できます",
+      });
+
+      // 決済完了情報をローカルストレージに保存
+      localStorage.setItem(
+        "setupInfo",
+        JSON.stringify({
+          templateId,
+          pageId,
+          blogUrl,
+        })
+      );
+    }
+  }, [paymentCompleted]);
+
   // const projectData = await getProjectData();
 
   return (

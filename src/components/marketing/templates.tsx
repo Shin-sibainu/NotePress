@@ -1,74 +1,10 @@
 import { motion } from "framer-motion";
-import { Check, ExternalLink, Star } from "lucide-react";
+import { Check, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import Image from "next/image";
-import Link from "next/link";
-
-type Template = {
-  id: string;
-  name: string;
-  price: number;
-  description: string;
-  thumbnail: string;
-  features: string[];
-  popular?: boolean;
-  available?: boolean;
-  demoUrl: string;
-};
-
-const templates: Template[] = [
-  {
-    id: "minimal",
-    name: "Minimalist",
-    price: 0,
-    description: "シンプルで読みやすいブログテンプレート",
-    thumbnail:
-      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=400&h=300",
-    features: [
-      "クリーンなデザイン",
-      "高速な表示速度",
-      "モバイルフレンドリー",
-      "ダークモード対応",
-    ],
-    available: true,
-    demoUrl: "https://minimalist.notepress.xyz",
-  },
-  {
-    id: "classic",
-    name: "Classic",
-    price: 4980,
-    description: "親しみやすいカジュアルなデザイン",
-    thumbnail:
-      "https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?auto=format&fit=crop&q=80&w=400&h=300",
-    features: [
-      "クラシックなレイアウト",
-      "充実した記事機能",
-      "カテゴリー管理",
-      "検索機能",
-    ],
-    popular: false,
-    available: false,
-    demoUrl: "https://minimalist.notepress.xyz",
-  },
-  {
-    id: "portfolio",
-    name: "Portfolio",
-    price: 6980,
-    description: "ポートフォリオで使えるデザイン",
-    thumbnail:
-      "https://images.unsplash.com/photo-1618556450991-2f1af64e8191?auto=format&fit=crop&q=80&w=400&h=300",
-    features: [
-      "ギャラリービュー",
-      "プロジェクト詳細ページ",
-      "コンタクトフォーム",
-      "SNSインテグレーション",
-    ],
-    available: false,
-    demoUrl: "",
-  },
-  // 他のテンプレートも同様に追加可能
-];
+import { Badge } from "@/components/ui/badge";
+import { templates } from "@/data/templates";
 
 export function Templates() {
   return (
@@ -108,6 +44,13 @@ export function Templates() {
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
+                  {template.isNew && (
+                    <div className="absolute top-2 right-2 z-10">
+                      <Badge className="bg-primary text-primary-foreground font-medium px-3 py-1">
+                        NEW
+                      </Badge>
+                    </div>
+                  )}
                   {template.popular && (
                     <div className="absolute top-2 right-2 z-10">
                       <span className="bg-primary text-primary-foreground text-sm font-medium px-3 py-1 rounded-full flex items-center gap-1">
@@ -165,15 +108,9 @@ export function Templates() {
                             : "outline"
                           : "secondary"
                       }
+                      onClick={() => window.open(template.demoUrl, "_blank")}
                     >
-                      <Link
-                        href={template.demoUrl}
-                        target="_blank"
-                        className="flex items-center"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        {template.available ? "サンプルを見る" : "Coming Soon"}
-                      </Link>
+                      {!template.available ? "Coming Soon" : "サンプルを見る"}
                     </Button>
                   </div>
                 </div>

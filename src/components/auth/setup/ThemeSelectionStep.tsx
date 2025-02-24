@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import Image from "next/image";
@@ -8,30 +6,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ExternalLink } from "lucide-react";
 import Link from "next/link";
-
-const themes = [
-  {
-    id: "minimalist",
-    name: "Minimalist",
-    description: "シンプルで読みやすいデザイン",
-    image:
-      "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=800&h=500",
-    price: "無料",
-    enabled: true,
-    demoUrl: "https://minimalist.notepress.xyz",
-  },
-  {
-    id: "casual",
-    name: "Casual",
-    description: "親しみやすいカジュアルなデザイン",
-    image:
-      "https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?auto=format&fit=crop&q=80&w=800&h=500",
-    price: "¥4,980",
-    enabled: false,
-    comingSoon: true,
-    demoUrl: "#",
-  },
-];
+import { Badge } from "@/components/ui/badge";
+import { templates } from "@/data/templates";
 
 interface ThemeSelectionStepProps {
   onUpdateData: (theme: string | null) => void;
@@ -68,34 +44,41 @@ export default function ThemeSelectionStep({
         </p>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {themes.map((theme) => (
+        {templates.map((theme) => (
           <motion.div
             key={theme.id}
-            whileHover={{ scale: theme.enabled ? 1.02 : 1 }}
-            whileTap={{ scale: theme.enabled ? 0.98 : 1 }}
-            className={cn("relative", !theme.enabled && "cursor-not-allowed")}
+            whileHover={{ scale: theme.available ? 1.02 : 1 }}
+            whileTap={{ scale: theme.available ? 0.98 : 1 }}
+            className={cn("relative", !theme.available && "cursor-not-allowed")}
           >
-            {theme.comingSoon && (
+            {!theme.available && (
               <span className="absolute -right-2 -top-2 z-10 text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                 準備中
+              </span>
+            )}
+            {theme.isNew && theme.available && (
+              <span className="absolute -right-2 -top-2 z-10">
+                <Badge className="bg-primary text-primary-foreground font-medium px-3 py-1">
+                  NEW
+                </Badge>
               </span>
             )}
             <Card
               className={cn(
                 "transition-all border-2",
-                theme.enabled
+                theme.available
                   ? selectedTheme === theme.id
                     ? "border-primary ring-2 ring-primary ring-offset-2"
                     : "hover:border-primary/50 border-transparent"
                   : "opacity-50 border-transparent",
-                !theme.enabled && "pointer-events-none",
+                !theme.available && "pointer-events-none",
                 showError && "border-destructive"
               )}
-              onClick={() => theme.enabled && handleThemeChange(theme.id)}
+              onClick={() => theme.available && handleThemeChange(theme.id)}
             >
               <div className="relative aspect-[16/10] overflow-hidden rounded-t-lg">
                 <Image
-                  src={theme.image}
+                  src={theme.thumbnail}
                   alt={theme.name}
                   fill
                   className="object-cover"
@@ -106,7 +89,9 @@ export default function ThemeSelectionStep({
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xl font-semibold">{theme.name}</h3>
                   <span className="text-sm font-medium text-muted-foreground">
-                    {theme.price}
+                    {theme.price === 0
+                      ? "無料"
+                      : `¥${theme.price.toLocaleString()}`}
                   </span>
                 </div>
                 <p className="text-muted-foreground mb-4">
@@ -117,7 +102,7 @@ export default function ThemeSelectionStep({
                   size="sm"
                   className="w-full"
                   asChild
-                  disabled={!theme.enabled}
+                  disabled={!theme.available}
                 >
                   <Link href={theme.demoUrl} target="_blank">
                     <ExternalLink className="h-4 w-4 mr-2" />
