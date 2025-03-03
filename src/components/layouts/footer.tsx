@@ -8,12 +8,15 @@ const footerLinks = {
   ],
   support: [
     // { name: "ドキュメント", href: "/docs" },
-    { name: "お問い合わせ", href: "https://skinny-talos-8be.notion.site/16e1dcf229c280088788d3daf3d2927c?pvs=105" },
+    {
+      name: "お問い合わせ",
+      href: "https://x.com/Shin_Engineer",
+    },
   ],
   legal: [
     { name: "利用規約", href: "/terms" },
     { name: "プライバシーポリシー", href: "/privacy" },
-    // { name: "特定商取引法に基づく表記", href: "/legal" },
+    { name: "特定商取引法に基づく表記", href: "/legal" },
   ],
 };
 

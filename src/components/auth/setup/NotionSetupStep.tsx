@@ -9,7 +9,6 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { templates } from "@/data/templates";
 import { useSetupContext } from "./SetupContext";
-import { loadStripe } from "@stripe/stripe-js";
 
 interface NotionSetupStepProps {
   onUpdateData: (data: any) => void;

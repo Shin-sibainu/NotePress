@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 
 interface DeploymentProgressProps {
   deploymentId: string;
+  onDeployComplete?: () => void;
 }
 
 type DeployPhase = "QUEUED" | "BUILDING" | "DEPLOYING" | "READY" | "ERROR";
@@ -26,7 +27,10 @@ interface BuildStep {
   progress: number;
 }
 
-export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
+export function DeploymentProgress({
+  deploymentId,
+  onDeployComplete,
+}: DeploymentProgressProps) {
   const [status, setStatus] = useState<DeploymentStatus>({
     phase: "QUEUED",
     message: "デプロイの準備中...",
@@ -112,6 +116,7 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
             progress = 100;
             setCurrentBuildStep(buildSteps.length - 1);
             localStorage.setItem(`deployment_${deploymentId}`, "completed");
+            onDeployComplete?.();
             break;
           case "ERROR":
             message =
@@ -161,7 +166,7 @@ export function DeploymentProgress({ deploymentId }: DeploymentProgressProps) {
         clearTimeout(timeoutId);
       }
     };
-  }, [deploymentId, buildStartTime, buildSteps]);
+  }, [deploymentId, buildStartTime, buildSteps, onDeployComplete]);
 
   useEffect(() => {
     if (status.phase === "BUILDING") {

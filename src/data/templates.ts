@@ -38,6 +38,7 @@ export const templates: Template[] = [
     id: "classic",
     name: "Classic",
     price: 3980,
+    // price: 0,
     description: "親しみやすいカジュアルなデザイン",
     thumbnail:
       "https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?auto=format&fit=crop&q=80&w=400&h=300",

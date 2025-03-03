@@ -9,58 +9,104 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function GET(request: Request) {
   try {
-    const { userId } = await auth();
     const { searchParams } = new URL(request.url);
     const sessionId = searchParams.get("session_id");
     const pageId = searchParams.get("page_id");
 
-    if (!sessionId || !pageId || !userId) {
-      return NextResponse.redirect(new URL("/setup", request.url));
+    if (!sessionId || !pageId) {
+      console.error("Missing params:", { sessionId, pageId });
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/setup?error=missing_params`
+      );
     }
 
-    // セッションの検証
+    const { userId } = await auth();
+    if (!userId) {
+      console.error("No userId found");
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/sign-in`
+      );
+    }
+
+    // Stripeセッションの取得
     const session = await stripe.checkout.sessions.retrieve(sessionId);
+    console.log("Stripe session:", session);
+
     if (session.payment_status !== "paid") {
-      return NextResponse.redirect(new URL("/setup", request.url));
+      console.error("Payment not completed:", session.payment_status);
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/setup?error=payment_failed`
+      );
     }
 
-    // メタデータから必要な情報を取得
-    const { templateId, blogUrl } = session.metadata || {};
+    // メタデータからテンプレートIDとブログURLを取得
+    const templateId = session.metadata?.templateId;
+    const blogUrl = session.metadata?.blogUrl;
 
-    // ユーザーのClerkIDからDBのユーザーIDを取得
-    const user = await prisma.user.findFirstOrThrow({
+    if (!templateId || !blogUrl) {
+      console.error("Missing metadata:", { templateId, blogUrl });
+      return NextResponse.redirect(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/setup?error=missing_metadata`
+      );
+    }
+
+    // ユーザーの取得または作成
+    const user = await prisma.user.upsert({
       where: { clerkId: userId },
-    });
-
-    // 購入履歴を保存
-    await prisma.purchase.create({
-      data: {
-        userId: user.id,
-        templateId: templateId || "",
-        amount: session.amount_total || 0,
-        stripePaymentId: sessionId,
+      update: {},
+      create: {
+        clerkId: userId,
+        name: session.customer_details?.name || undefined,
+        email: session.customer_details?.email || undefined,
       },
     });
 
-    // 新しいブログを作成
+    console.log("User created/updated:", user);
+
+    // 購入履歴の記録
+    const purchase = await prisma.purchase.create({
+      data: {
+        userId: user.id,
+        templateId,
+        amount: session.amount_total || 0,
+        stripePaymentId: session.id,
+      },
+    });
+
+    console.log("Purchase recorded:", purchase);
+
+    // ブログの作成
     const blog = await prisma.blog.create({
       data: {
-        userId: user.id,
-        url: blogUrl || "",
+        url: blogUrl,
         notionPageId: pageId,
-        theme: templateId || "",
+        theme: templateId,
+        userId: user.id,
       },
     });
 
-    // 決済完了後のダッシュボードにリダイレクト
-    return NextResponse.redirect(
-      new URL(
-        `/dashboard?payment_completed=true&blog_id=${blog.id}`,
-        request.url
-      )
+    console.log("Blog created:", blog);
+
+    // ブログ情報をクエリパラメータとして渡す
+    const redirectUrl = new URL(
+      `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`
     );
+    redirectUrl.searchParams.set("payment_completed", "true");
+    redirectUrl.searchParams.set("blog_id", blog.id);
+    redirectUrl.searchParams.set("blog_url", blog.url);
+    redirectUrl.searchParams.set("page_id", blog.notionPageId);
+    redirectUrl.searchParams.set("theme", blog.theme);
+
+    return NextResponse.redirect(redirectUrl.toString());
   } catch (error) {
-    console.error("Setup complete error:", error);
-    return NextResponse.redirect(new URL("/setup?error=true", request.url));
+    console.error("Setup completion error:", error);
+    // エラーの詳細をクエリパラメータに含める
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.redirect(
+      `${
+        process.env.NEXT_PUBLIC_BASE_URL
+      }/setup?error=server_error&details=${encodeURIComponent(errorMessage)}`
+    );
   }
 }

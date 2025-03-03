@@ -5,7 +5,7 @@ import BlogStatus from "@/components/dashboard/BlogStatus";
 import { QuickActions } from "@/components/dashboard/QuickActions";
 import { WritingGuide } from "@/components/dashboard/WritingGuide";
 import { RecentPosts } from "@/components/dashboard/RecentPosts";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
 
 // interface Project {
@@ -34,18 +34,29 @@ import { toast } from "@/hooks/use-toast";
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const paymentCompleted = searchParams.get("payment_completed") === "true";
 
   useEffect(() => {
     if (paymentCompleted) {
       const templateId = searchParams.get("template");
       const pageId = searchParams.get("page_id");
+      const blogId = searchParams.get("blog_id");
       const blogUrl = searchParams.get("blog_url");
 
-      toast({
-        title: "決済が完了しました",
-        description: "ブログの構築を開始できます",
-      });
+      // 既に表示済みかチェック
+      const paymentNotificationShown =
+        localStorage.getItem("payment_notification_shown") === "true";
+
+      if (!paymentNotificationShown) {
+        toast({
+          title: "決済が完了しました",
+          description: "ブログの構築を開始できます",
+        });
+
+        // 表示済みとしてマーク
+        localStorage.setItem("payment_notification_shown", "true");
+      }
 
       // 決済完了情報をローカルストレージに保存
       localStorage.setItem(
@@ -54,10 +65,17 @@ export default function DashboardPage() {
           templateId,
           pageId,
           blogUrl,
+          blogId,
         })
       );
+
+      // URLパラメータをクリア（リロード時に再実行されないように）
+      if (paymentCompleted) {
+        // クエリパラメータなしのURLに置き換え
+        router.replace("/dashboard");
+      }
     }
-  }, [paymentCompleted]);
+  }, [paymentCompleted, router]);
 
   // const projectData = await getProjectData();
 
