@@ -21,6 +21,9 @@ export default function BlogStatus() {
   const searchParams = useSearchParams();
   const paymentCompleted = searchParams.get("payment_completed") === "true";
   const blogId = searchParams.get("blog_id");
+
+  // 決済完了フラグを追加（コンポーネントのマウント時点から有効）
+  const [isPaymentComplete, setIsPaymentComplete] = useState(false);
   const [deploymentId, setDeploymentId] = useState<string | null>(null);
   const [isDeploying, setIsDeploying] = useState(false);
   const [deploymentChecked, setDeploymentChecked] = useState(false);
@@ -28,6 +31,19 @@ export default function BlogStatus() {
     useState<DeploymentStatus | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const [currentStep, setCurrentStep] = useState<DeployStep>("INIT");
+
+  // 最初に実行される - 決済完了状態をチェック
+  useEffect(() => {
+    if (paymentCompleted && blogId) {
+      // 決済完了フラグを即座に設定
+      setIsPaymentComplete(true);
+      // 既存の情報をクリア
+      setDeploymentStatus(null);
+      // 初期化状態を設定
+      setIsInitializing(true);
+      setCurrentStep("INIT");
+    }
+  }, []);
 
   // ローディング表示のコンポーネント
   const LoadingDisplay = () => {
@@ -81,22 +97,24 @@ export default function BlogStatus() {
     );
   };
 
-  // 支払い完了時の初期状態を設定
+  // 新規デプロイの開始
   useEffect(() => {
-    if (paymentCompleted && blogId) {
-      setIsInitializing(true);
-      setCurrentStep("INIT");
-    }
-  }, [paymentCompleted, blogId]);
-
-  // 新規デプロイの開始（決済完了時）
-  useEffect(() => {
-    if (paymentCompleted && blogId && !deploymentChecked) {
+    if (
+      (paymentCompleted || isPaymentComplete) &&
+      blogId &&
+      !deploymentChecked
+    ) {
       const startDeploy = async () => {
         try {
+          // 初期化中の状態を設定
+          setIsInitializing(true);
           setCurrentStep("FETCHING_BLOG");
+
           const blogResponse = await fetch(`/api/blogs/${blogId}`);
           const blog = await blogResponse.json();
+
+          // 新しいブログURLをローカルストレージに保存
+          localStorage.setItem("blogUrl", blog.url);
 
           setCurrentStep("DEPLOYING");
           localStorage.setItem("deploy_started", "true");
@@ -113,41 +131,50 @@ export default function BlogStatus() {
 
           const deployData = await deployResponse.json();
 
+          // デプロイIDが返ってきた場合は使用
           if (deployData.deploymentId) {
             localStorage.setItem("deploymentId", deployData.deploymentId);
-            // まずデプロイIDを設定
             setDeploymentId(deployData.deploymentId);
             setIsDeploying(true);
-            // 少し遅延を入れてから初期化状態を解除
-            setTimeout(() => {
-              setIsInitializing(false);
-            }, 5000);
-            return;
           }
-
-          // デプロイIDがない場合のみエラーとして扱う
-          if (!deployResponse.ok) {
+          // エラー応答でもデプロイIDがあれば利用（重複ドメインエラー等）
+          else if (!deployResponse.ok && deployData.existingDeploymentId) {
+            localStorage.setItem(
+              "deploymentId",
+              deployData.existingDeploymentId
+            );
+            setDeploymentId(deployData.existingDeploymentId);
+            setIsDeploying(true);
+          }
+          // 本当のエラーの場合
+          else if (!deployResponse.ok) {
             throw new Error(deployData.error || "デプロイに失敗しました");
           }
+
+          // 常に7秒間はローディング表示を維持
+          setTimeout(() => {
+            setIsInitializing(false);
+          }, 7000);
         } catch (error) {
           console.error("Deploy error:", error);
-          // エラーは記録するが、デプロイIDがある場合は処理を継続
-          if (!deploymentId) {
+
+          // エラーでも7秒間はローディング表示を維持
+          setTimeout(() => {
             localStorage.removeItem("deploy_started");
             setIsInitializing(false);
-          }
+          }, 7000);
         }
       };
 
       startDeploy();
       setDeploymentChecked(true);
     }
-  }, [paymentCompleted, blogId, deploymentChecked, toast, deploymentId]);
+  }, [paymentCompleted, isPaymentComplete, blogId, deploymentChecked]);
 
   // 既存のデプロイメント状態確認
   useEffect(() => {
-    // 新規デプロイ中は既存の状態確認をスキップ
-    if (paymentCompleted || localStorage.getItem("deploy_started") === "true") {
+    // 決済完了時は既存の状態確認をスキップ
+    if (paymentCompleted || isPaymentComplete) {
       return;
     }
 
@@ -190,10 +217,10 @@ export default function BlogStatus() {
         })
         .catch(console.error);
     }
-  }, [deploymentId, paymentCompleted]);
+  }, [deploymentId, paymentCompleted, isPaymentComplete]);
 
-  // 表示の条件分岐を修正
-  if (isInitializing && paymentCompleted) {
+  // 表示の条件分岐
+  if (isInitializing && (paymentCompleted || isPaymentComplete)) {
     return <LoadingDisplay />;
   }
 
@@ -201,8 +228,13 @@ export default function BlogStatus() {
     return <DeploymentProgress deploymentId={deploymentId} />;
   }
 
+  // 決済完了時は他の表示をしない
+  if (paymentCompleted || isPaymentComplete) {
+    return null;
+  }
+
   // 既存のデプロイメント状態は、有料テンプレート購入時以外でのみ表示
-  if (deploymentStatus && !isInitializing && !paymentCompleted) {
+  if (deploymentStatus) {
     // URLの形式を確認
     const blogUrl = deploymentStatus.url || "";
     const fullUrl = blogUrl.includes("http") ? blogUrl : `https://${blogUrl}`;
