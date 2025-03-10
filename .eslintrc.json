@@ -8,11 +8,5 @@
     "react-hooks/rules-of-hooks": "off",
     "react-hooks/exhaustive-deps": "off"
   },
-  "ignorePatterns": [
-    "node_modules/",
-    ".next/",
-    "out/",
-    "public/",
-    "**/*.d.ts"
-  ]
+  "ignorePatterns": ["node_modules/", ".next/", "out/", "public/", "**/*.d.ts"]
 }
