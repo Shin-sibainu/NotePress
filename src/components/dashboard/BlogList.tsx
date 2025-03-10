@@ -28,7 +28,7 @@ export function BlogList({ blogs }: { blogs: Blog[] }) {
                   </h3>
                   <p className="text-sm text-muted-foreground">{blog.url}</p>
                 </div>
-                {blog.isDefault && (
+                {blog.isDefault !== undefined && blog.isDefault && (
                   <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                     デフォルト
                   </span>
