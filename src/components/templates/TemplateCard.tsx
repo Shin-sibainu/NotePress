@@ -1,77 +1,87 @@
-import { ExternalLink, Sparkles } from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Template } from "@/types/template";
+import { Card } from "@/components/ui/card";
+import { Template } from "@/data/templates";
+import { ArrowRight, Check } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
-interface TemplateCardProps {
+type TemplateCardProps = {
   template: Template;
-}
+};
 
 export function TemplateCard({ template }: TemplateCardProps) {
   return (
-    <Card
-      className={cn(
-        "overflow-hidden group relative",
-        template.status === "coming_soon" && "opacity-75"
-      )}
-    >
-      {template.status === "coming_soon" && (
-        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] z-10 flex items-center justify-center">
-          <Badge variant="secondary" className="text-base px-4 py-1">
-            準備中
-          </Badge>
-        </div>
-      )}
-      <div className="relative">
-        <div className="relative aspect-[4/3] overflow-hidden">
-          <Image
-            src={template.image}
-            alt={template.name}
-            fill
-            className={cn(
-              "object-cover transition-transform duration-300",
-              template.status === "ready" && "group-hover:scale-105"
-            )}
-          />
-        </div>
-        {template.featured && template.status === "ready" && (
-          <div className="absolute top-4 right-4">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Sparkles className="h-3 w-3" />
-              おすすめ
+    <Card className="overflow-hidden">
+      <div className="relative aspect-video">
+        <Image
+          src={template.thumbnail}
+          alt={template.name}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
+        {template.isNew && (
+          <div className="absolute top-2 right-2 z-10">
+            <Badge className="bg-primary text-primary-foreground font-medium px-3 py-1">
+              NEW
             </Badge>
           </div>
         )}
       </div>
 
       <div className="p-6">
-        <h3 className="text-xl font-semibold mb-2">{template.name}</h3>
+        <h3 className="text-xl font-bold mb-2">{template.name}</h3>
         <p className="text-muted-foreground mb-4">{template.description}</p>
 
-        <div className="flex flex-wrap gap-2 mb-6">
-          {template.tags.map((tag) => (
-            <Badge key={tag} variant="outline">
-              {tag}
-            </Badge>
-          ))}
+        <div className="mb-6">
+          <div className="mb-4">
+            <span className="text-2xl font-bold">
+              ¥{template.price.toLocaleString()}
+            </span>
+            <span className="text-muted-foreground ml-1">
+              {template.available ? "（買い切り）" : "（開発中）"}
+            </span>
+          </div>
+
+          <ul className="space-y-2">
+            {template.features.map((feature) => (
+              <li key={feature} className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                <span
+                  className={`text-sm ${
+                    template.available
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground/60"
+                  }`}
+                >
+                  {feature}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <div className="flex gap-3">
-          <Button
-            className="flex-1"
-            asChild
-            disabled={template.status === "coming_soon"}
-          >
-            <Link href={template.demoUrl} target="_blank">
-              <ExternalLink className="h-4 w-4 mr-2" />
+        <Button
+          className="w-full"
+          disabled={!template.available}
+          variant={
+            template.available
+              ? template.popular
+                ? "default"
+                : "outline"
+              : "secondary"
+          }
+          onClick={() => window.open(template.demoUrl, "_blank")}
+        >
+          {!template.available ? (
+            "Coming Soon"
+          ) : (
+            <>
               サンプルを見る
-            </Link>
-          </Button>
-        </div>
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </>
+          )}
+        </Button>
       </div>
     </Card>
   );

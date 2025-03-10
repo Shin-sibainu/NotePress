@@ -21,9 +21,11 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { blogUrl, pageId, theme } = body as DeploymentConfig;
 
+    // console.log(theme);
+
     // テンプレートリポジトリへのアクセスを確認
     const templateCheck = await fetch(
-      "https://api.github.com/repos/Shin-sibainu/minimalist",
+      `https://api.github.com/repos/Shin-sibainu/${theme}`,
       {
         headers: {
           Authorization: `Bearer ${GITHUB_TOKEN}`,
