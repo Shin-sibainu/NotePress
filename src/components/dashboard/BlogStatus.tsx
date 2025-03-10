@@ -14,6 +14,9 @@ interface DeploymentStatus {
   buildProgress: number;
 }
 
+// ステップの型定義を追加
+type DeployStep = "INIT" | "FETCHING_BLOG" | "DEPLOYING" | "COMPLETE";
+
 export default function BlogStatus() {
   const searchParams = useSearchParams();
   const paymentCompleted = searchParams.get("payment_completed") === "true";
@@ -24,20 +27,79 @@ export default function BlogStatus() {
   const [deploymentStatus, setDeploymentStatus] =
     useState<DeploymentStatus | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [currentStep, setCurrentStep] = useState<DeployStep>("INIT");
 
-  // 新規デプロイの開始
+  // ローディング表示のコンポーネント
+  const LoadingDisplay = () => {
+    const messages = {
+      INIT: {
+        title: "準備しています...",
+        description: "ブログの構築準備を開始します",
+      },
+      FETCHING_BLOG: {
+        title: "ブログ情報を取得中...",
+        description: "Notionからブログ情報を取得しています",
+      },
+      DEPLOYING: {
+        title: "ブログを構築中...",
+        description: "完了まで10~20秒程度お待ちください",
+      },
+      COMPLETE: {
+        title: "構築完了",
+        description: "ブログの構築が完了しました",
+      },
+    };
+
+    const currentMessage = messages[currentStep];
+
+    return (
+      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50">
+        <div className="flex flex-col items-center justify-center h-full space-y-6">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <span className="text-2xl font-medium">{currentMessage.title}</span>
+            <p className="text-sm text-muted-foreground">
+              {currentMessage.description}
+            </p>
+          </div>
+
+          {/* ステップインジケーター */}
+          <div className="flex gap-2 items-center mt-8">
+            {Object.keys(messages).map((step, index) => (
+              <div
+                key={step}
+                className={`h-2 w-2 rounded-full ${
+                  Object.keys(messages).indexOf(currentStep) >= index
+                    ? "bg-primary"
+                    : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // 支払い完了時の初期状態を設定
+  useEffect(() => {
+    if (paymentCompleted && blogId) {
+      setIsInitializing(true);
+      setCurrentStep("INIT");
+    }
+  }, [paymentCompleted, blogId]);
+
+  // 新規デプロイの開始（決済完了時）
   useEffect(() => {
     if (paymentCompleted && blogId && !deploymentChecked) {
       const startDeploy = async () => {
         try {
-          setIsInitializing(true);
-          // 既存のデプロイメント状態をクリア
-          setDeploymentStatus(null);
-          localStorage.removeItem("deploy_started");
-          localStorage.removeItem("deploymentId");
-
+          setCurrentStep("FETCHING_BLOG");
           const blogResponse = await fetch(`/api/blogs/${blogId}`);
           const blog = await blogResponse.json();
+
+          setCurrentStep("DEPLOYING");
+          localStorage.setItem("deploy_started", "true");
 
           const deployResponse = await fetch("/api/deploy", {
             method: "POST",
@@ -49,64 +111,55 @@ export default function BlogStatus() {
             }),
           });
 
-          if (!deployResponse.ok) {
-            const errorData = await deployResponse.json();
-            throw new Error(errorData.error || "デプロイに失敗しました");
-          }
-
           const deployData = await deployResponse.json();
 
-          // デプロイ情報を設定
-          localStorage.setItem("deploymentId", deployData.deploymentId);
-          // 即座に状態を更新
-          setDeploymentId(deployData.deploymentId);
-          setIsDeploying(true);
+          if (deployData.deploymentId) {
+            localStorage.setItem("deploymentId", deployData.deploymentId);
+            // まずデプロイIDを設定
+            setDeploymentId(deployData.deploymentId);
+            setIsDeploying(true);
+            // 少し遅延を入れてから初期化状態を解除
+            setTimeout(() => {
+              setIsInitializing(false);
+            }, 5000);
+            return;
+          }
 
-          // トースト通知は状態更新後に表示
-          toast({
-            title: "ブログの構築を開始します",
-            description: "完了までしばらくお待ちください",
-          });
+          // デプロイIDがない場合のみエラーとして扱う
+          if (!deployResponse.ok) {
+            throw new Error(deployData.error || "デプロイに失敗しました");
+          }
         } catch (error) {
           console.error("Deploy error:", error);
-          setIsInitializing(false);
-          toast({
-            variant: "destructive",
-            title: "エラー",
-            description:
-              error instanceof Error
-                ? error.message
-                : "ブログの構築開始に失敗しました",
-          });
+          // エラーは記録するが、デプロイIDがある場合は処理を継続
+          if (!deploymentId) {
+            localStorage.removeItem("deploy_started");
+            setIsInitializing(false);
+          }
         }
       };
 
       startDeploy();
       setDeploymentChecked(true);
     }
-  }, [paymentCompleted, blogId, deploymentChecked, toast]);
+  }, [paymentCompleted, blogId, deploymentChecked, toast, deploymentId]);
 
-  // deploymentIdの変更を監視して初期化状態を解除
+  // 既存のデプロイメント状態確認
   useEffect(() => {
-    if (deploymentId) {
-      setIsInitializing(false);
+    // 新規デプロイ中は既存の状態確認をスキップ
+    if (paymentCompleted || localStorage.getItem("deploy_started") === "true") {
+      return;
     }
-  }, [deploymentId]);
 
-  // 既存のデプロイメントの状態確認
-  useEffect(() => {
     const storedDeploymentId = localStorage.getItem("deploymentId");
-
-    // ブログURLを取得
     const storedBlogUrl = localStorage.getItem("blogUrl");
 
     if (storedBlogUrl) {
-      // デプロイ完了済みの場合
       const isDeploymentCompleted =
         localStorage.getItem(`deployment_${storedDeploymentId}_completed`) ===
         "true";
-
       if (isDeploymentCompleted || !storedDeploymentId) {
+        // 最新のURLで状態を更新
         setDeploymentStatus({
           status: "READY",
           url: `${storedBlogUrl}.notepress.xyz`,
@@ -118,13 +171,10 @@ export default function BlogStatus() {
     }
 
     if (storedDeploymentId) {
-      // デプロイメント状態を確認
       fetch(`/api/deploy/status?deploymentId=${storedDeploymentId}`)
         .then((res) => res.json())
         .then((data) => {
           setDeploymentStatus(data);
-
-          // 完了またはエラーの場合はプログレスバーを表示しない
           if (data.status === "READY") {
             localStorage.setItem(
               `deployment_${storedDeploymentId}_completed`,
@@ -138,33 +188,17 @@ export default function BlogStatus() {
             setIsDeploying(true);
           }
         })
-        .catch((error) => {
-          console.error("Error fetching deployment status:", error);
-        });
+        .catch(console.error);
     }
-  }, [deploymentId]);
+  }, [deploymentId, paymentCompleted]);
 
-  // ここ出てくるのが、遅い。
-  if (deploymentId) {
-    return <DeploymentProgress deploymentId={deploymentId} />;
+  // 表示の条件分岐を修正
+  if (isInitializing && paymentCompleted) {
+    return <LoadingDisplay />;
   }
 
-  if (isInitializing && paymentCompleted) {
-    return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50">
-        <div className="flex flex-col items-center justify-center h-full space-y-4">
-          <div className="flex items-center gap-3 text-primary">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-xl font-medium">
-              ブログを準備しています...
-            </span>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            10~20秒程度お待ちください
-          </p>
-        </div>
-      </div>
-    );
+  if (deploymentId) {
+    return <DeploymentProgress deploymentId={deploymentId} />;
   }
 
   // 既存のデプロイメント状態は、有料テンプレート購入時以外でのみ表示
@@ -226,3 +260,12 @@ export default function BlogStatus() {
 
   return null;
 }
+
+/* 
+memo(決済後の挙動)
+1. 決済が完了する
+2. ダッシュボードページに移動して、BlogStatusも以前の情報も何も表示されない。
+3. 以前の情報のリンクとステータス状態が3秒くらい映る。
+4. そこからDeploymentProgressがはじまる。(LoadingDisplayが一度も表示されていない。)
+
+*/
