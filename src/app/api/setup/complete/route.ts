@@ -33,7 +33,6 @@ export async function GET(request: Request) {
 
     // Stripeセッションの取得
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    console.log("Stripe session:", session);
 
     if (session.payment_status !== "paid") {
       console.error("Payment not completed:", session.payment_status);
@@ -64,8 +63,6 @@ export async function GET(request: Request) {
       },
     });
 
-    console.log("User created/updated:", user);
-
     // 購入履歴の記録
     const purchase = await prisma.purchase.create({
       data: {
@@ -76,19 +73,17 @@ export async function GET(request: Request) {
       },
     });
 
-    console.log("Purchase recorded:", purchase);
-
     // ブログの作成
-    const blog = await prisma.blog.create({
-      data: {
-        url: blogUrl,
-        notionPageId: pageId,
-        theme: templateId,
-        userId: user.id,
-      },
-    });
+    const blogData = {
+      url: blogUrl,
+      notionPageId: pageId,
+      theme: templateId,
+      userId: user.id,
+    };
 
-    console.log("Blog created:", blog);
+    const blog = await prisma.blog.create({
+      data: blogData,
+    });
 
     // ブログ情報をクエリパラメータとして渡す
     const redirectUrl = new URL(
@@ -103,6 +98,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(redirectUrl.toString());
   } catch (error) {
     console.error("Setup completion error:", error);
+    console.error("Blog creation error details:", error);
+
     // エラーの詳細をクエリパラメータに含める
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error";
