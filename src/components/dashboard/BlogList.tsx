@@ -9,7 +9,7 @@ interface Blog {
   id: string;
   url: string;
   theme: string;
-  isDefault: boolean;
+  isDefault?: boolean;
 }
 
 export function BlogList({ blogs }: { blogs: Blog[] }) {
@@ -28,7 +28,7 @@ export function BlogList({ blogs }: { blogs: Blog[] }) {
                   </h3>
                   <p className="text-sm text-muted-foreground">{blog.url}</p>
                 </div>
-                {blog.isDefault !== undefined && blog.isDefault && (
+                {blog.isDefault && (
                   <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
                     デフォルト
                   </span>
