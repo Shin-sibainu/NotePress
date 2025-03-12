@@ -34,7 +34,6 @@ model Blog {
   publishedAt  DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  isDefault    Boolean   @default(false)  // デフォルトのブログかどうか
 
   @@index([userId])
   // @@unique([userId, theme])  // 同じユーザーの同じテーマの組み合わせはユニーク
