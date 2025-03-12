@@ -49,8 +49,8 @@ export const templates: Template[] = [
       "検索機能",
     ],
     isNew: true,
-    // available: true,
-    available: false,
+    available: true,
+    // available: false,
     demoUrl: "https://classic.notepress.xyz",
   },
 ];
