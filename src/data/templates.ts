@@ -50,7 +50,7 @@ export const templates: Template[] = [
     ],
     isNew: true,
     available: true,
-    demoUrl: "https://classic.notepress.xyz",
+    demoUrl: "https://indie-media.notepress.xyz",
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_CLASSIC_PRICE_ID,
   },
 ];

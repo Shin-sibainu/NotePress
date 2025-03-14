@@ -8,13 +8,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(request: Request) {
   try {
-    console.log("Stripe checkout API called");
     const { templateId, price, pageId, blogUrl } = await request.json();
-    console.log("Request data:", { templateId, price, pageId, blogUrl });
 
     // テンプレート情報を取得
     const template = templates.find((t) => t.id === templateId);
-    console.log("Template found:", template);
 
     if (!template) {
       console.error("Template not found:", templateId);
@@ -26,7 +23,6 @@ export async function POST(request: Request) {
 
     // 無料テンプレートの場合は直接成功URLにリダイレクト
     if (template.price === 0) {
-      console.log("Free template, redirecting");
       return NextResponse.json({
         free: true,
         redirectUrl: `${process.env.NEXT_PUBLIC_BASE_URL}/api/setup/complete?free=true&page_id=${pageId}&templateId=${templateId}&blogUrl=${blogUrl}`,
@@ -42,12 +38,8 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log("Using price ID:", template.stripePriceId);
-    console.log("Stripe API Key available:", !!process.env.STRIPE_SECRET_KEY);
-
     // テンプレートから取得した商品IDを使用
     const priceId = template.stripePriceId;
-    console.log("Using template price ID:", priceId);
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
@@ -68,7 +60,6 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log("Stripe session created:", session.id);
     return NextResponse.json({ sessionId: session.id });
   } catch (error) {
     console.error("Stripe API error:", error);
