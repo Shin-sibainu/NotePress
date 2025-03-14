@@ -15,6 +15,7 @@ export type Template = {
   isNew?: boolean;
   available?: boolean;
   demoUrl: string;
+  stripePriceId?: string;
 };
 
 export const templates: Template[] = [
@@ -38,7 +39,6 @@ export const templates: Template[] = [
     id: "classic",
     name: "Classic",
     price: 3980,
-    // price: 0,
     description: "親しみやすいカジュアルなデザイン",
     thumbnail:
       "https://images.unsplash.com/photo-1618556450994-a6a128ef0d9d?auto=format&fit=crop&q=80&w=400&h=300",
@@ -49,8 +49,8 @@ export const templates: Template[] = [
       "検索機能",
     ],
     isNew: true,
-    // available: true,
-    available: false,
+    available: true,
     demoUrl: "https://classic.notepress.xyz",
+    stripePriceId: process.env.NEXT_PUBLIC_STRIPE_CLASSIC_PRICE_ID,
   },
 ];
