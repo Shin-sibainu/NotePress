@@ -88,10 +88,7 @@ export function SetupStepper() {
           }),
         });
 
-        // APIレスポンスの詳細をログ出力
-        console.log("API Response Status:", response.status);
         const responseData = await response.json();
-        console.log("API Response Data:", responseData);
 
         // エラーレスポンスの場合は早期リターン
         if (!response.ok) {
@@ -107,14 +104,10 @@ export function SetupStepper() {
           throw new Error("No sessionId returned from API");
         }
 
-        console.log("Session ID:", sessionId);
-
         // Stripeのチェックアウトページにリダイレクト
         const stripe = await loadStripe(
           process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
         );
-
-        console.log("Stripe loaded:", !!stripe);
 
         if (stripe) {
           await stripe.redirectToCheckout({ sessionId });
