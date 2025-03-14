@@ -52,5 +52,6 @@ export const templates: Template[] = [
     available: true,
     demoUrl: "https://classic.notepress.xyz",
     stripePriceId: "price_1R1kicGmCnZ4BNAJR0uc9pYR",
+    // stripePriceId: "price_1QxQI1GmCnZ4BNAJpvPaDUXH",
   },
 ];
