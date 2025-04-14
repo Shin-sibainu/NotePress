@@ -9,7 +9,7 @@ const footerLinks = {
   support: [
     // { name: "ドキュメント", href: "/docs" },
     {
-      name: "お問い合わせ",
+      name: "お問い合わせ(開発者のX)",
       href: "https://x.com/Shin_Engineer",
     },
   ],
