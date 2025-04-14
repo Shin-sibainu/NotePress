@@ -33,7 +33,7 @@ export const templates: Template[] = [
       "ダークモード対応",
     ],
     available: true,
-    demoUrl: "https://minimalist.notepress.xyz",
+    demoUrl: "https://minimalist-updated.notepress.xyz/",
   },
   {
     id: "classic",
